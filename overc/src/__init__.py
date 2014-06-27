@@ -1,6 +1,7 @@
 import os.path
 
 from flask import Flask, Request
+from flask.ctx import _AppCtxGlobals
 
 from overc import __version__
 from overc.src.init import init_sqlalchemy
@@ -32,8 +33,20 @@ class OvercApplication(object):
         # Init DB
         self.db_engine, self.db = init_sqlalchemy(self.app, self.app.config['DB_CONNECT'])
 
-    def run(self):
-        host, port = self.app.config['APP_RUN'].split(':')
+        # Globals
+        class DignioAppCtxGlobals(_AppCtxGlobals):
+            """ Flask `g` overrides """
+            app = self
+            db = self.db
+        self.app.app_ctx_globals_class = DignioAppCtxGlobals
+
+        # Blueprints
+        from .bps import api
+        self.app.register_blueprint(api.bp, url_prefix='/api')
+
+    def run(self, bindto):
+        """ Launch application """
+        host, port = bindto.split(':')
         self.app.run(
             host=host or '0.0.0.0',
             port=int(port)

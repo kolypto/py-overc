@@ -34,8 +34,11 @@ class Service(Base):
 
     id = Column(Integer, primary_key=True, nullable=False)
     server_id = Column(Integer, ForeignKey(Server.id, ondelete='CASCADE'), nullable=False, doc="Server id")
+
+    period = Column(Integer, nullable=False, doc="Expected reporting period, seconds")
+
     name = Column(String(32), nullable=False, doc="Service machine name (as reported from the remote)")
-    title = Column(Unicode(64), nullable=False, doc="Service title")
+    title = Column(Unicode(64), nullable=False, default=u'', doc="Service title")
 
     server = relationship(Server, foreign_keys=server_id, backref='services')
 
@@ -51,9 +54,10 @@ class ServiceState(Base):
     __tablename__ = 'service_states'
 
     id = Column(BigInteger, primary_key=True, nullable=False)
+    service_id = Column(Integer, ForeignKey(Service.id, ondelete='CASCADE'), nullable=False, doc="Service id")
+
     checked = Column(Boolean, nullable=False, default=False, doc="State checked?")
     rtime = Column(DateTime, default=datetime.utcnow, doc="Received time")
-    service_id = Column(Integer, ForeignKey(Service.id, ondelete='CASCADE'), nullable=False, doc="Service id")
 
     state = Column(Enum('', 'OK', 'WARN', 'FAIL', name='service_state'), default='', nullable=False, doc='Service status')
     info = Column(UnicodeText, nullable=False, doc='Service info')
@@ -83,10 +87,11 @@ class Alerts(Base):
     __tablename__ = 'alerts'
 
     id = Column(BigInteger, primary_key=True, nullable=False)
-    reported = Column(Boolean, nullable=False, default=False, doc="Alert reported?")
-    ctime = Column(DateTime, default=datetime.utcnow, doc="Creation time")
     server_id = Column(Integer, ForeignKey(Server.id, ondelete='CASCADE'), nullable=True, doc="Server id")
     service_id = Column(Integer, ForeignKey(Service.id, ondelete='CASCADE'), nullable=True, doc="Service id")
+
+    reported = Column(Boolean, nullable=False, default=False, doc="Alert reported?")
+    ctime = Column(DateTime, default=datetime.utcnow, doc="Creation time")
 
     severity = Column(SmallInteger, nullable=False, default=0, doc='Alert severity')
     channel = Column(String(32), nullable=False, doc="Alert channel")
@@ -94,8 +99,8 @@ class Alerts(Base):
 
     message = Column(UnicodeText, nullable=False, doc="Message")
 
-    server = relationship(Server, foreign_keys=server_id, backref='services')
-    service = relationship(Service, foreign_keys=service_id, backref='states')
+    server = relationship(Server, foreign_keys=server_id, backref='alerts')
+    service = relationship(Service, foreign_keys=service_id, backref='alerts')
 
     __table_args__ = (
         Index('idx_reported', reported),

@@ -1,5 +1,5 @@
 DEBUG = True
-TESTING = True
+TESTING = False
 
 # Server settings
 SERVER_NAME = None
@@ -17,6 +17,3 @@ MAX_CONTENT_LENGTH = 16777216
 
 # Database connection string
 DB_CONNECT = 'mysql://user:pass@127.0.0.1/overc'
-
-# Running
-APP_RUN = ':5000'
