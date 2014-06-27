@@ -10,12 +10,11 @@ class ReceiverTest(ApplicationTest, unittest.TestCase):
     """ Test API: /api """
 
     def send_service_status(self, server, services, period=60):
-        h = Headers()
-        h.add('Authorization', 'Basic ' + base64.b64encode(server))
         return self.test_client.jsonapi('POST', '/api/service/status', {
+            'server': server,
             'period': period,
             'services': services
-        }, headers=h)
+        })
 
     def assertServices(self, server, expected):
         """ Helper to test for services' states """
@@ -41,7 +40,7 @@ class ReceiverTest(ApplicationTest, unittest.TestCase):
         """ Test /api/service/ """
 
         # Send the first status
-        res, rv = self.send_service_status('localhost:1234', [
+        res, rv = self.send_service_status({'name': 'localhost', 'key': '1234'}, [
             dict(name='app', state='OK', info='up 30s'),
             dict(name='cpu', state='OK', info='50% ok'),
             dict(name='que', state='OK', info='2 ok'),
@@ -62,7 +61,7 @@ class ReceiverTest(ApplicationTest, unittest.TestCase):
         ])
 
         # Update with more status
-        res, rv = self.send_service_status('localhost:1234', [
+        res, rv = self.send_service_status({'name': 'localhost', 'key': '1234'}, [
             dict(name='app', state='OK', info='up 40s'),
             dict(name='cpu', state='OK', info='30% ok'),
             dict(name='que', state='OK', info='3 ok'),
@@ -80,6 +79,6 @@ class ReceiverTest(ApplicationTest, unittest.TestCase):
         ])
 
         # Try to update with an invalid server key
-        res, rv = self.send_service_status('localhost:1--4', [])
+        res, rv = self.send_service_status({'name': 'localhost', 'key': '____'}, [])
         self.assertEqual(rv.status_code, 403)
         self.assertDictEqual(res, {'error': 'Invalid server key'})
