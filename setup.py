@@ -21,10 +21,12 @@ setup(
 
     install_requires=[
         'flask >= 0.10.1',
-        'PyYAML >= 3.11',
         'sqlalchemy >= 0.9.6',
         'pytz >= 2014.4',
     ],
+    extras_require={
+        'mysql': ['mysql-python >= 1.2.5'],
+    },
     include_package_data=True,
 
     platforms='any',
