@@ -10,7 +10,7 @@ class ReceiverTest(ApplicationTest, unittest.TestCase):
     """ Test API: /api """
 
     def send_service_status(self, server, services, period=60):
-        return self.test_client.jsonapi('POST', '/api/service/status', {
+        return self.test_client.jsonapi('POST', '/api/set/service/status', {
             'server': server,
             'period': period,
             'services': services
@@ -38,6 +38,11 @@ class ReceiverTest(ApplicationTest, unittest.TestCase):
 
     def test_service_status_single(self):
         """ Test /api/service/ """
+
+        # Test validation: 'server'
+        res, rv = self.send_service_status({'name': 'localhost'}, [])
+        self.assertEqual(rv.status_code, 400)
+        self.assertDictEqual(res, {'error': 'Data: "server.key" should be a string'})
 
         # Send the first status
         res, rv = self.send_service_status({'name': 'localhost', 'key': '1234'}, [

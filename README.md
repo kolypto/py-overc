@@ -17,19 +17,19 @@ Sending Data
 
 OverC uses an extremely simple JSON protocol to report arbitrary monitoring data.
 
-Services' State
----------------
+Reporting Services
+------------------
 
-OverC does not connect to anything: all data should be POSTed to it as JSON to `/api/service/status`:
+OverC does not connect to anything: all data should be POSTed to it as JSON to `/api/set/service/status`:
 
 ```json
 {
   "server": { "name": "localhost", "key": "1234" },
   "period": 60,
   "services": [
-    { "name": "application", "state": "OK", "up 32h" },
-    { "name": "cpu", "state": "OK", "28% load" },
-    { "name": "queue", "state": "OK", "3 items" },
+    { "name": "application", "state": "OK", "info": "up 32h" },
+    { "name": "cpu", "state": "OK", "info": "28% load" },
+    { "name": "queue", "state": "OK", "info": "3 items" },
   ]
 }
 ```
@@ -58,16 +58,3 @@ Keys explained:
 
 Note that there's no need to explicitly define Servers and Services: all data is accepted automatically.
 
-Alerts
-------
-
-It's possible to send alerts directly by pushing JSON object to `/api/alert`:
-
-```json
-{
-  "server": { "name": "localhost", "key": "1234" },
-  "alerts": [
-    "Failed to execute plugin"
-  ]
-}
-```
