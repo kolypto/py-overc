@@ -60,7 +60,6 @@ class ReceiverTest(ApplicationTest, unittest.TestCase):
             self.assertIsInstance(alert.ctime, datetime)
             self.assertEqual(alert.channel, expected[i]['channel'])
             self.assertEqual(alert.event, expected[i]['event'])
-            self.assertEqual(alert.title, expected[i]['title'])
             self.assertEqual(alert.message, expected[i]['message'])
 
     def test_service_status(self):
@@ -135,10 +134,10 @@ class ReceiverTest(ApplicationTest, unittest.TestCase):
         """ Test /api/set/alerts """
         # Send the first bunch of alerts
         res, rv = self.send_alerts({ 'name': 'localhost', 'key': '1234' }, [
-            dict(title='Server lags'),
-            dict(title='Too much logs', message='1000 lines'),
-            dict(title='Service down', service='test'),
-            dict(title='Service down again', service='test'),
+            dict(message='Server lags'),
+            dict(message='Too much logs'),
+            dict(message='Service down', service='test'),
+            dict(message='Service down again', service='test'),
         ])
         self.assertEqual(rv.status_code, 200)
 
@@ -150,8 +149,17 @@ class ReceiverTest(ApplicationTest, unittest.TestCase):
 
         # Check alerts
         self.assertAlerts(server, [
-            dict(id=1, service_id=None, reported=False, channel='api', event='api', title=u'Server lags', message=u''),
-            dict(id=2, service_id=None, reported=False, channel='api', event='api', title=u'Too much logs', message=u'1000 lines'),
-            dict(id=3, service_id=1, reported=False, channel='api', event='api', title=u'Service down', message=u''),
-            dict(id=4, service_id=1, reported=False, channel='api', event='api', title=u'Service down again', message=u''),
+            dict(id=1, service_id=None, reported=False, channel='api', event='api', message=u'Server lags'),
+            dict(id=2, service_id=None, reported=False, channel='api', event='api', message=u'Too much logs'),
+            dict(id=3, service_id=1, reported=False, channel='api', event='api', message=u'Service down'),
+            dict(id=4, service_id=1, reported=False, channel='api', event='api', message=u'Service down again'),
         ])
+
+    def test_service_status_alerting(self):
+        """ Test how alerts are created when the service state changes """
+        # Test OK
+        # Test OK -> WARN
+        # Test WARN -> ERR
+        # Test ERR -> OK
+        # Test OK -> (timeout)
+        # Test OK back again

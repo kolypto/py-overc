@@ -95,8 +95,6 @@ class Alert(Base):
 
     channel = Column(String(32), nullable=False, doc="Alert channel")
     event = Column(String(32), nullable=False, doc="Alert event")
-
-    title = Column(UnicodeText, nullable=False, doc="Title")
     message = Column(UnicodeText, nullable=False, doc="Alert details")
 
     server = relationship(Server, foreign_keys=server_id, backref='alerts')

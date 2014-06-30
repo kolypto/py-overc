@@ -138,8 +138,7 @@ def set_alerts():
     assert isinstance(data['alerts'], list), 'Data: "alerts" should be a list'
     assert all(
         isinstance(s, dict) and
-        'title' in s and isinstance(s['title'], basestring) and
-        ('message' not in s or isinstance(s['message'], basestring)) and
+        'message' in s and isinstance(s['message'], basestring) and
         ('service' not in s or isinstance(s['service'], basestring)) and
         set(s.keys()) <= {'title', 'message', 'service'}
         for s in data['alerts']
@@ -168,8 +167,7 @@ def set_alerts():
             service=service,
             channel='api',
             event='api',
-            title=unicode(a['title']),
-            message=unicode(a['message']) if 'message' in a else u''
+            message=unicode(a['message'])
         )
         ssn.add(alert)
 

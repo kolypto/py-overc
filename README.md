@@ -67,9 +67,9 @@ It's possible to send alerts directly by pushing JSON object to `/api/set/alerts
 {
   "server": { "name": "localhost", "key": "1234" },
   "alerts": [
-    { "title": "System down", "message": "The system does not respond" },
-    { "title": "System down", "message": "The system does not respond" },
-    { "title": "Service plugin error", "message": "Cannot check service A", "service": "queue" },
+    { "message": "System down" },
+    { "message": "System down" },
+    { "message": "Cannot check state for service A", "service": "queue" },
   ]
 }
 ```
