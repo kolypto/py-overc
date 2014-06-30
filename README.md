@@ -77,4 +77,10 @@ It's possible to send alerts directly by pushing JSON object to `/api/set/alerts
 
 If you want to alert about something happened with a particular service, use the "service" key to specify its name.
 
+Keys explained:
 
+* `"server"` is the *Server* identification.
+* `"alerts"` is the list of alerts you'd like to report
+    
+    * `"message"`: alert message text
+    * `"service"`: (optional) service name to report the alert for, if any.

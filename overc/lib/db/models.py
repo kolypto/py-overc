@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql.schema import Column, ColumnDefault
@@ -27,6 +27,11 @@ class Server(Base):
         UniqueConstraint(name),
     )
 
+    def __str__(self):
+        return self.name
+
+    def __unicode__(self):
+        return self.title or self.name
 
 class Service(Base):
     """ A service being monitored """
@@ -46,6 +51,20 @@ class Service(Base):
         UniqueConstraint(name),
         Index('idx_serverid', server_id),
     )
+
+    def check_timed_out(self):
+        """ Is the service timed out?
+        :returns: Is timed out, and how long ago it was last seen
+        :rtype: (bool, timedelta)
+        """
+        dt = datetime.utcnow() - self.state.rtime
+        return dt > timedelta(seconds=self.period)
+
+    def __str__(self):
+        return self.name
+
+    def __unicode__(self):
+        return self.title or self.name
 
 
 class state_t(int):
@@ -103,11 +122,11 @@ Service.state = relationship(ServiceState, viewonly=True, uselist=False,
                                  ServiceState.service_id == Service.id
                              ), doc="Current service state")
 
-ServiceState.prev_state = relationship(ServiceState, viewonly=True, uselist=False,
-                            primaryjoin=and_(
-                                remote(ServiceState.id) < foreign(ServiceState.id),
-                                remote(ServiceState.service_id) == foreign(ServiceState.service_id)
-                            ), order_by=ServiceState.id.desc(), doc="Previous state, if any")
+ServiceState.prev = relationship(ServiceState, viewonly=True, uselist=False,
+                                 primaryjoin=and_(
+                                     remote(ServiceState.id) < foreign(ServiceState.id),
+                                     remote(ServiceState.service_id) == foreign(ServiceState.service_id)
+                                 ), order_by=ServiceState.id.desc(), doc="Previous state, if any")
 
 
 class Alert(Base):
@@ -131,3 +150,15 @@ class Alert(Base):
     __table_args__ = (
         Index('idx_reported', reported),
     )
+
+    def __unicode__(self):
+        return u''.join([
+            # server `service`:
+            self.server or u'',
+            u'`{}`'.format(self.server) if self.server else u'',
+            u': ' if self.server or self.service else u'',
+            # [channel/event]
+            u'[{}/{}] '.format(self.channel, self.event),
+            # message
+            self.message
+        ])
