@@ -169,7 +169,7 @@ def set_alerts():
             server=server,
             service=service,
             channel='api',
-            event='api',
+            event='alert',
             message=unicode(a['message'])
         )
         ssn.add(alert)

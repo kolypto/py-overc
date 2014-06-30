@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 
 from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm.session import object_session
 from sqlalchemy.sql.schema import Column, ColumnDefault
 from sqlalchemy.sql.schema import ForeignKey, UniqueConstraint, Index
 from sqlalchemy import Boolean, SmallInteger, Integer, BigInteger, Float, String, Text, Unicode, UnicodeText, Binary, DateTime, Enum
@@ -41,6 +42,7 @@ class Service(Base):
     server_id = Column(Integer, ForeignKey(Server.id, ondelete='CASCADE'), nullable=False, doc="Server id")
 
     period = Column(Integer, nullable=True, doc="Expected reporting period, seconds")
+    timed_out = Column(Boolean, nullable=False, default=False, doc="Is currently timed out?")
 
     name = Column(String(32), nullable=False, doc="Service machine name (as reported from the remote)")
     title = Column(Unicode(64), nullable=False, default=u'', doc="Service title")
@@ -52,13 +54,16 @@ class Service(Base):
         Index('idx_serverid', server_id),
     )
 
-    def check_timed_out(self):
-        """ Is the service timed out?
-        :returns: Is timed out, and how long ago it was last seen
-        :rtype: (bool, timedelta)
+    def update_timed_out(self):
+        """ Update service's `timed_out` field
+        :returns: How long ago it was last seen (if timed out)
+        :rtype: timedelta
         """
+        if not self.state:
+            return timedelta(seconds=0)
         dt = datetime.utcnow() - self.state.rtime
-        return dt > timedelta(seconds=self.period)
+        self.timed_out = dt > timedelta(seconds=self.period)
+        return dt
 
     def __str__(self):
         return self.name
@@ -111,6 +116,24 @@ class ServiceState(Base):
         Index('idx_checked', checked)
     )
 
+    @property
+    def prev(self):
+        # FIXME: learn how to apply .limit() to the relationship() query and uncomment the definition below
+        return object_session(self)\
+            .query(ServiceState)\
+            .filter(
+                ServiceState.id < self.id,
+                ServiceState.service_id == self.service_id
+            )\
+            .order_by(ServiceState.id.desc())\
+            .first()
+
+    # prev = relationship("ServiceState", viewonly=True, uselist=False,
+    #                                  primaryjoin=and_(
+    #                                      remote(id) < foreign(id),
+    #                                      remote(service_id) == foreign(service_id)
+    #                                  ), order_by=id.desc(), doc="Previous state, if any")
+
 
 latest_state = select([func.max(ServiceState.id)]). \
     where(Service.id == ServiceState.service_id). \
@@ -121,12 +144,6 @@ Service.state = relationship(ServiceState, viewonly=True, uselist=False,
                                  ServiceState.id == latest_state,
                                  ServiceState.service_id == Service.id
                              ), doc="Current service state")
-
-ServiceState.prev = relationship(ServiceState, viewonly=True, uselist=False,
-                                 primaryjoin=and_(
-                                     remote(ServiceState.id) < foreign(ServiceState.id),
-                                     remote(ServiceState.service_id) == foreign(ServiceState.service_id)
-                                 ), order_by=ServiceState.id.desc(), doc="Previous state, if any")
 
 
 class Alert(Base):
@@ -152,11 +169,13 @@ class Alert(Base):
     )
 
     def __unicode__(self):
+        server_service = u' '.join(filter(lambda x: x is not None, [
+            unicode(self.server) if self.server else None,
+            unicode(self.service) if self.service else None,
+        ]))
         return u''.join([
             # server `service`:
-            self.server or u'',
-            u'`{}`'.format(self.server) if self.server else u'',
-            u': ' if self.server or self.service else u'',
+            u'{}: '.format(server_service) if server_service else u'',
             # [channel/event]
             u'[{}/{}] '.format(self.channel, self.event),
             # message

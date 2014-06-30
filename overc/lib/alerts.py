@@ -30,7 +30,7 @@ def execute_alert_plugin(plugins_path, plugin, arguments, message):
     """
     # Prepare
     #command = shlex.split(plugin + ' ' + arguments)
-    command = [plugin] + arguments
+    command = [plugin] + list(arguments)
 
     # Execute
     process = subprocess.Popen(
@@ -40,9 +40,13 @@ def execute_alert_plugin(plugins_path, plugin, arguments, message):
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE
     )
-    process.stdin.write(message)
-    process.stdin.close()
-    process.wait()
+    try:
+        process.stdin.write(message)
+        process.stdin.close()
+        process.wait()
+    except Exception as e:
+        e.message += process.stderr.read() + process.stdout.read()
+        raise
 
 
 def send_alert_to_subscribers(alertd_path, alerts_config, message):
@@ -54,18 +58,26 @@ def send_alert_to_subscribers(alertd_path, alerts_config, message):
     :param message: Alert message
     :type message: unicode
     """
+    # TODO: execute alert scripts in parallel!
+
     # Send
     plugin_failures = []
     for plugin_name, plugin_args in alerts_config.items():
         try:
             execute_alert_plugin(alertd_path, plugin_args[0], plugin_args[1:], message)
         except Exception as e:
+            logger.exception('Alert plugin `{}` failed with args: {}'.format(plugin_name, plugin_args))
             plugin_failures.append((plugin_name, e))
 
-    # Report plugin errors
+    # Report plugin errors. Any plugin is sufficient
     plugin_failures = "\n".join([ 'Alert plugin `{}` failed: {}'.format(plugin_name, e) for plugin_name, e in plugin_failures ])
+    success = 0
     for plugin_name, plugin_args in alerts_config.items():
         try:
             execute_alert_plugin(alertd_path, plugin_args[0], plugin_args[1:], plugin_failures)
+            success += 1
         except Exception:
-            logger.exception('Failed to send fatal plugin notification')
+            logger.exception('Failed to send fatal plugin notifications!')
+
+    if not success:
+        logger.fatal('NONE of the plugins could send the message:\n' + plugin_failures)

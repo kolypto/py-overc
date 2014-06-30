@@ -4,9 +4,9 @@ set -eu
 # Arguments:
 #   filename
 # stdin: message
-# Simply writes its input to the file
+# Simply appends its input to the file
 
 message=$(cat)
 filename=$1
 
-echo "$message" > $filename
+echo "$message" >> $filename

@@ -1,12 +1,13 @@
+from time import sleep
 import unittest
-import base64
+import os
 from datetime import datetime
-from werkzeug.datastructures import Headers
 
 from . import ApplicationTest
 from overc.lib.db import models
+from overc.lib.supervise import supervise_once
 
-class ReceiverTest(ApplicationTest, unittest.TestCase):
+class ApiTest(ApplicationTest, unittest.TestCase):
     """ Test API: /api """
 
     def send_service_status(self, server, services, period=60):
@@ -155,11 +156,159 @@ class ReceiverTest(ApplicationTest, unittest.TestCase):
             dict(id=4, service_id=1, reported=False, channel='api', event='api', message=u'Service down again'),
         ])
 
-    def test_service_status_alerting(self):
+    def test_supervisor(self):
         """ Test how alerts are created when the service state changes """
-        # Test OK
-        # Test OK -> WARN
-        # Test WARN -> ERR
-        # Test ERR -> OK
-        # Test OK -> (timeout)
-        # Test OK back again
+        # Prerequisites
+        overc_log = '/tmp/overc.log'
+        self.app.app.config['ALERTS'] = { 'test': ('./fwrite.sh', overc_log) }
+
+        def overc_readlog():
+            """ Read overc.log and remove """
+            if not os.path.exists(overc_log):
+                return None
+            try:
+                with open(overc_log, 'r') as f:
+                    return f.read().encode('utf-8')
+            finally:
+                os.unlink(overc_log)
+        overc_readlog()
+
+        # Dry run first
+        self.assertEqual(supervise_once(self.app), (0, 0))
+        self.assertIsNone(overc_readlog())
+
+        # Test a: OK
+        # Nothing should be alerted or reported
+        res, rv = self.send_service_status({'name': 'localhost', 'key': '1234'}, [
+            {'name': 'a', 'state': 'OK', 'info': 'hey1'},
+        ])
+        self.assertEqual(res['ok'], 1)
+        self.assertEqual(supervise_once(self.app), (0, 0))
+        self.assertIsNone(overc_readlog())
+
+        # Test b: UNK
+        # UNKs should always be reported
+        # Also, that's the first reported state, and it should only be reported once
+        res, rv = self.send_service_status({'name': 'localhost', 'key': '1234'}, [
+            {'name': 'b', 'state': 'BULLSHIT', 'info': 'hey2'},
+        ])
+        self.assertEqual(res['ok'], 1)
+        self.assertEqual(supervise_once(self.app), (1, 1)) # 1 alert
+        self.assertEqual(
+            overc_readlog(),
+            u'localhost b: '
+            u'[service:state/changed] '
+            u'State changed: "(?)" -> "UNK"'
+            '\n'
+            u'Current: UNK: hey2 (sent unsupported state: "BULLSHIT")'
+            '\n\n'
+        )
+
+        # Test a: OK -> WARN
+        # State change should be reported
+        res, rv = self.send_service_status({'name': 'localhost', 'key': '1234'}, [
+            {'name': 'a', 'state': 'WARN', 'info': 'hey3'},
+        ])
+        self.assertEqual(res['ok'], 1)
+        self.assertEqual(supervise_once(self.app), (1, 1)) # 1 alert
+        self.assertEqual(
+            overc_readlog(),
+            u'localhost a: '
+            u'[service:state/changed] '
+            u'State changed: "OK" -> "WARN"'
+            '\n'
+            u'Current: WARN: hey3'
+            '\n\n'
+        )
+
+        # Test a: WARN -> WARN
+        # State not changed, no alert
+        res, rv = self.send_service_status({'name': 'localhost', 'key': '1234'}, [
+            {'name': 'a', 'state': 'WARN', 'info': 'hey4'},
+        ])
+        self.assertEqual(res['ok'], 1)
+        self.assertEqual(supervise_once(self.app), (0, 0))  # no alerts
+
+        # Test a: WARN -> OK
+        # State change should be reported
+        res, rv = self.send_service_status({'name': 'localhost', 'key': '1234'}, [
+            {'name': 'a', 'state': 'OK', 'info': 'hey5'},
+        ])
+        self.assertEqual(res['ok'], 1)
+        self.assertEqual(supervise_once(self.app), (1, 1))  # 1 alert
+        self.assertEqual(
+            overc_readlog(),
+            u'localhost a: '
+            u'[service:state/changed] '
+            u'State changed: "WARN" -> "OK"'
+            '\n'
+            u'Current: OK: hey5'
+            '\n\n'
+        )
+
+        # Test a: OK -> (timeout)
+        res, rv = self.send_service_status({'name': 'localhost', 'key': '1234'}, [
+            {'name': 'a', 'state': 'OK', 'info': 'hey6'},
+        ], period=1)
+        self.assertEqual(res['ok'], 1)
+        self.assertEqual(supervise_once(self.app), (0, 0))  # all ok
+
+        sleep(2)
+
+        self.assertEqual(supervise_once(self.app), (1, 1))  # 1 alert
+        self.assertRegexpMatches(
+            overc_readlog(),
+            u'localhost a: '
+            ur'\[service/offline\] '
+            ur'Service offline: last seen 0:00:\d+ ago'
+            '\n'
+            u'Current: OK: hey6'
+            '\n\n'
+        )
+
+        # Still offline, it should not report again
+        self.assertEqual(supervise_once(self.app), (0, 0))  # no alerts
+
+        # Test a: OK back again
+        res, rv = self.send_service_status({'name': 'localhost', 'key': '1234'}, [
+            {'name': 'a', 'state': 'OK', 'info': 'hey7'},
+        ], period=60)
+        self.assertEqual(res['ok'], 1)
+        self.assertEqual(supervise_once(self.app), (1, 1))  # 1 alert
+        self.assertEqual(
+            overc_readlog(),
+            u'localhost a: '
+            u'[service/online] '
+            u'Service back online'
+            '\n' +
+            u'Current: OK: hey7'
+            '\n\n'
+        )
+
+        # Still online, it should not report again
+        self.assertEqual(supervise_once(self.app), (0, 0))  # no alerts
+
+
+
+        # Test manual alerts
+        self.send_alerts({'name': 'localhost', 'key': '1234'}, [
+            dict(message='Server lags'),
+            dict(message='Service down again', service='test'),
+        ])
+        self.assertEqual(res['ok'], 1)
+        self.assertEqual(supervise_once(self.app), (0, 2))  # 2 alerts
+
+        self.assertEqual(
+            overc_readlog(),
+            u'localhost: '
+            u'[api/alert] '
+            u'Server lags'
+            '\n\n'
+            u'localhost test: '
+            u'[api/alert] '
+            u'Service down again'
+            '\n\n'
+        )
+
+        # Should not report again
+        self.assertEqual(supervise_once(self.app), (0, 0))  # no alerts

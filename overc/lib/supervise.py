@@ -2,6 +2,7 @@ import os
 import logging
 from datetime import datetime, timedelta
 from time import sleep
+from sqlalchemy.orm.scoping import scoped_session
 from sqlalchemy.orm.session import sessionmaker
 
 from overc.lib.db import models
@@ -12,15 +13,13 @@ logger = logging.getLogger(__name__)
 # TODO: these routines should obtain an exclusive lock so multiple supervise processes does not issue alerts multiple times
 
 
-def _check_service_states(db_engine):
+def _check_service_states(ssn):
     """ Test all service states, raise alerts if necessary
-    :param db_engine: Database engine
-    :type db_engine: sqlalchemy.engine.Engine
+    :param ssn: Database session
+    :type ssn: sqlalchemy.orm.session.Session
     :returns: The number of new alerts reported
     :rtype: int
     """
-    ssn = sessionmaker(bind=db_engine)
-
     # Fetch all states that are not yet checked
     service_states = ssn.query(models.ServiceState)\
         .filter(models.ServiceState.checked == False)\
@@ -32,22 +31,22 @@ def _check_service_states(db_engine):
     for s in service_states:
         alert = None
 
-        # Report state changes
-        if s.state != s.prev.state:
+        # Report state changes and abnormal states
+        if s.state != (s.prev.state if s.prev else 'OK'):
             ssn.add(models.Alert(
-                server_id=s.service.server_id,
-                service_id=s.service_id,
+                server=s.service.server,
+                service=s.service,
                 channel='service:state',
                 event='changed',
-                message=u'State changed: "{}" -> "{}"'.format(s.state, s.prev.state)
+                message=u'State changed: "{}" -> "{}"'.format(s.prev.state if s.prev else '(?)', s.state)
             ))
             new_alerts += 1
 
             # In addition, report "UNK" states!
-            if s.state == 'UNK':
+            if s.state == 'UNK' and s.prev is not None:
                 ssn.add(models.Alert(
-                    server_id=s.service.server_id,
-                    service_id=s.service_id,
+                    server=s.service.server,
+                    service=s.service,
                     channel='service:state',
                     event='unk',
                     message=u'Service state unknown!'
@@ -63,15 +62,13 @@ def _check_service_states(db_engine):
     return new_alerts
 
 
-def _check_service_timeouts(db_engine):
+def _check_service_timeouts(ssn):
     """ Test all services for timeouts
-    :param db_engine: Database engine
-    :type db_engine: sqlalchemy.engine.Engine
+    :param ssn: Database session
+    :type ssn: sqlalchemy.orm.session.Session
     :returns: The number of new alerts reported
     :rtype: int
     """
-    ssn = sessionmaker(bind=db_engine)
-
     # Fetch all services which have enough data
     services = ssn.query(models.Service)\
         .filter(
@@ -82,15 +79,28 @@ def _check_service_timeouts(db_engine):
     # Detect timeouts
     new_alerts = 0
     for s in services:
-        timed_out, seen_timeago = s.check_timed_out()
-        if timed_out:
-            ssn.add(models.Alert(
-                server_id=s.service.server_id,
-                service_id=s.service_id,
-                channel='service',
-                event='timeout',
-                message=u'Service timed out: last seen {} ago'.format(seen_timeago)
-            ))
+        # Update state
+        was_timed_out = s.timed_out
+        seen_ago = s.update_timed_out()
+
+        # Changed?
+        if was_timed_out != s.timed_out:
+            alert = models.Alert(
+                server=s.server,
+                service=s,
+                channel='service'
+            )
+            if s.timed_out:
+                alert.event = 'offline'
+                alert.message = u'Service offline: last seen {} ago'.format(
+                    str(seen_ago).split('.')[0]
+                )
+            else:
+                alert.event = 'online'
+                alert.message = u'Service back online'
+
+            ssn.add(alert)
+            ssn.add(s)
             new_alerts += 1
 
     # Finish
@@ -98,15 +108,17 @@ def _check_service_timeouts(db_engine):
     return new_alerts
 
 
-def _send_pending_alerts(db_engine, alertd_path, alerts_config):
+def _send_pending_alerts(ssn, alertd_path, alerts_config):
     """ Send pending alerts
-    :param app: Overc Application
-    :type app: OvercApplication
+    :param ssn: Database session
+    :type ssn: sqlalchemy.orm.session.Session
+    :param alertd_path: Path to "alert.d" instance folder
+    :type alertd_path: str
+    :param alerts_config: Application config for alerts
+    :type alerts_config: dict
     :returns: The number of alerts sent
     :rtype: int
     """
-    ssn = sessionmaker(bind=db_engine)
-
     # Fetch all alerts which were not reported
     pending_alerts = ssn.query(models.Alert)\
         .filter(models.Alert.reported == False)\
@@ -114,8 +126,15 @@ def _send_pending_alerts(db_engine, alertd_path, alerts_config):
 
     # Report them one by one
     for a in pending_alerts:
+        # Prepare alert message
+        alert_message = unicode(a) + "\n"
+        if a.service and a.service.state:
+            s = a.service.state
+            alert_message += u"Current: {}: {}\n".format(s.state, s.info)
+
         # Potential exceptions are handled & logged down there
-        alerts.send_alert_to_subscribers(alertd_path, alerts_config, unicode(a))
+        alerts.send_alert_to_subscribers(alertd_path, alerts_config, alert_message)
+        a.reported = True
         ssn.add(a)
 
     # Finish
@@ -132,13 +151,23 @@ def supervise_once(app):
 
     :param app: Application
     :type app: OvercApplication
+    :returns: (New alerts created, Alerts sent)
+    :rtype: (int, int)
     """
+
+    # Prepare
+    ssn = app.db
     alertd_path = os.path.join(app.app.instance_path, 'alert.d')
     alerts_config = app.app.config['ALERTS']
 
-    _check_service_states(app.db_engine)
-    _check_service_timeouts(app.db_engine)
-    _send_pending_alerts(app.db_engine, alertd_path, alerts_config)
+    # Act
+    new_alerts, sent_alerts = 0, 0
+    new_alerts += _check_service_states(ssn)
+    new_alerts += _check_service_timeouts(ssn)
+    sent_alerts = _send_pending_alerts(ssn, alertd_path, alerts_config)
+
+    # Finish
+    return new_alerts, sent_alerts
 
 
 def supervise_loop(app):
