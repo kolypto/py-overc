@@ -108,6 +108,9 @@ def set_service_status():
             ssn.add(service)
 
         # State
+        if not models.state_t.is_valid(s['state']):
+            s['info'] += ' (sent unsupported state: "{}")'.format(s['state'])
+            s['state'] = 'UNK'
         state = models.ServiceState(service=service, state=s['state'], info=s['info'])
         ssn.add(state)
 

@@ -17,3 +17,8 @@ MAX_CONTENT_LENGTH = 16777216
 
 # Database connection string
 DB_CONNECT = 'mysql://user:pass@127.0.0.1/overc'
+
+# Alert destinations: { name: (command, command-arguments...) }
+ALERTS = {
+    'test': ('fwrite.sh', '/tmp/testfile.txt'),
+}

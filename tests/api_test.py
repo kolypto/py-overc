@@ -74,7 +74,7 @@ class ReceiverTest(ApplicationTest, unittest.TestCase):
         res, rv = self.send_service_status({'name': 'localhost', 'key': '1234'}, [
             dict(name='app', state='OK', info='up 30s'),
             dict(name='cpu', state='OK', info='50% ok'),
-            dict(name='que', state='OK', info='2 ok'),
+            dict(name='que', state='HEY', info='2 ok'), # unsupported state
         ])
         self.assertEqual(rv.status_code, 200)
 
@@ -88,7 +88,7 @@ class ReceiverTest(ApplicationTest, unittest.TestCase):
         self.assertServices(server, [
             dict(id=1, period=60, name='app', title=u'app', state=dict(id=1, checked=False, state='OK', info='up 30s')),
             dict(id=2, period=60, name='cpu', title=u'cpu', state=dict(id=2, checked=False, state='OK', info='50% ok')),
-            dict(id=3, period=60, name='que', title=u'que', state=dict(id=3, checked=False, state='OK', info='2 ok')),
+            dict(id=3, period=60, name='que', title=u'que', state=dict(id=3, checked=False, state='UNK', info='2 ok (sent unsupported state: "HEY")')),
         ])
 
         # Update with more status

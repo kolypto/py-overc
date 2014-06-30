@@ -4,7 +4,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql.schema import Column, ColumnDefault
 from sqlalchemy.sql.schema import ForeignKey, UniqueConstraint, Index
 from sqlalchemy import Boolean, SmallInteger, Integer, BigInteger, Float, String, Text, Unicode, UnicodeText, Binary, DateTime, Enum
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, remote, foreign
 
 from sqlalchemy.sql.expression import select, and_, func
 
@@ -12,6 +12,7 @@ Base = declarative_base()
 
 # TODO: server grouping
 # TODO: service grouping
+
 
 class Server(Base):
     """ A server being monitored """
@@ -25,7 +26,6 @@ class Server(Base):
     __table_args__ = (
         UniqueConstraint(name),
     )
-
 
 
 class Service(Base):
@@ -48,6 +48,29 @@ class Service(Base):
     )
 
 
+class state_t(int):
+    """ Comparable enum for state """
+    states = ('UNK', 'OK', 'WARN', 'FAIL')
+
+    UNK = 0
+    OK = 1
+    WARN = 2
+    FAIL = 3
+
+    def __new__(cls, state):
+        intval = cls.states.index(state)
+        return super(state_t, cls).__new__(cls, intval)
+
+    @classmethod
+    def is_valid(cls, state):
+        """ Test whether the state value is valid """
+        try:
+            cls.states.index(state)
+            return True
+        except ValueError:
+            return False
+
+
 
 class ServiceState(Base):
     """ Service state """
@@ -59,7 +82,7 @@ class ServiceState(Base):
     checked = Column(Boolean, nullable=False, default=False, doc="State checked (alerts created)?")
     rtime = Column(DateTime, default=datetime.utcnow, doc="Received time")
 
-    state = Column(Enum('', 'OK', 'WARN', 'FAIL', name='service_state'), default='', nullable=False, doc='Service status')
+    state = Column(Enum(*state_t.states, name='service_state'), default='UNK', nullable=False, doc='Service status')
     info = Column(UnicodeText, nullable=False, doc='Service info')
 
     service = relationship(Service, foreign_keys=service_id, backref='states')
@@ -74,12 +97,17 @@ latest_state = select([func.max(ServiceState.id)]). \
     where(Service.id == ServiceState.service_id). \
     correlate(Service). \
     as_scalar()
-Service.state = relationship(ServiceState, viewonly=True,
+Service.state = relationship(ServiceState, viewonly=True, uselist=False,
                              primaryjoin=and_(
                                  ServiceState.id == latest_state,
                                  ServiceState.service_id == Service.id
-                             ), uselist=False)
+                             ), doc="Current service state")
 
+ServiceState.prev_state = relationship(ServiceState, viewonly=True, uselist=False,
+                            primaryjoin=and_(
+                                remote(ServiceState.id) < foreign(ServiceState.id),
+                                remote(ServiceState.service_id) == foreign(ServiceState.service_id)
+                            ), order_by=ServiceState.id.desc(), doc="Previous state, if any")
 
 
 class Alert(Base):
@@ -103,14 +131,3 @@ class Alert(Base):
     __table_args__ = (
         Index('idx_reported', reported),
     )
-
-
-
-class Notification(Base):
-    """ Notifications configuration """
-
-    __tablename__ = 'notifications'
-
-    id = Column(Integer, primary_key=True, nullable=False)
-    script = Column(String(255), nullable=False, doc="Notification script to invoke")
-    arguments = Column(String(255), nullable=False, doc="Notification script arguments")

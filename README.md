@@ -54,7 +54,8 @@ Keys explained:
     * `"OK"`: service runs fine
     * `"WARN"`: warning condition
     * `"ERR"`: critical error condition
-    * `""`: empty string stands for "unknown", which probably means that its state cannot be retrieved
+    * `"UNK"`: unknown, which probably means that its state cannot be retrieved.
+    * Any other string is converted to `"UNK"`.
 
 Note that there's no need to explicitly define Servers and Services: all data is accepted automatically.
 
