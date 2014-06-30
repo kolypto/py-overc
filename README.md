@@ -58,3 +58,22 @@ Keys explained:
 
 Note that there's no need to explicitly define Servers and Services: all data is accepted automatically.
 
+Reporting Alerts
+----------------
+
+It's possible to send alerts directly by pushing JSON object to `/api/set/alerts`:
+
+```json
+{
+  "server": { "name": "localhost", "key": "1234" },
+  "alerts": [
+    { "title": "System down", "message": "The system does not respond" },
+    { "title": "System down", "message": "The system does not respond" },
+    { "title": "Service plugin error", "message": "Cannot check service A", "service": "queue" },
+  ]
+}
+```
+
+If you want to alert about something happened with a particular service, use the "service" key to specify its name.
+
+

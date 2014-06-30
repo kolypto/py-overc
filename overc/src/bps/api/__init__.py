@@ -58,7 +58,7 @@ def _identify_service(ssn, server, service_name):
 
 @bp.route('/set/service/status', methods=['POST'])
 @jsonapi
-def service_status():
+def set_service_status():
     """ Receive single service status
 
         Status codes:
@@ -91,22 +91,87 @@ def service_status():
         for s in data['services']
     ), 'Data: "services" should be a list of objects with keys "name", "state", "info"'
 
-    # Identify server or create
+    # Identify server
     server = _identify_server(ssn, data['server'])
     ssn.add(server)
 
     # Services
+    services_cache = {}
     for s in data['services']:
         # Identify service
-        service = _identify_service(ssn, server, s['name'])
-
-        # Update
-        service.period = data['period']
-        ssn.add(service)
+        try:
+            service = services_cache[s['name']]
+        except KeyError:
+            service = _identify_service(ssn, server, s['name'])
+            services_cache[service.name] = service
+            service.period = data['period']
+            ssn.add(service)
 
         # State
         state = models.ServiceState(service=service, state=s['state'], info=s['info'])
         ssn.add(state)
+
+    # Save
+    ssn.commit()
+
+    return {'ok': 1}
+
+
+@bp.route('/set/alerts', methods=['POST'])
+@jsonapi
+def set_alerts():
+    """ Receive custom alerts
+
+        Status codes:
+            400 invalid input
+            403 invalid server key
+    """
+    ssn = g.db
+
+    # Input validation
+    data = request.get_json()
+    assert isinstance(data, dict), 'Invalid data: should be JSON object'
+    assert 'server' in data, 'Data: "server" key is missing'
+    assert 'alerts' in data, 'Data: "alerts" key is missing'
+
+    # Input validation: alerts
+    assert isinstance(data['alerts'], list), 'Data: "alerts" should be a list'
+    assert all(
+        isinstance(s, dict) and
+        'title' in s and isinstance(s['title'], basestring) and
+        ('message' not in s or isinstance(s['message'], basestring)) and
+        ('service' not in s or isinstance(s['service'], basestring)) and
+        set(s.keys()) <= {'title', 'message', 'service'}
+        for s in data['alerts']
+    ), 'Data: "alerts" should be a list of objects with keys "title", "message"?, "service"?'
+
+    # Identify server
+    server = _identify_server(ssn, data['server'])
+    ssn.add(server)
+
+    # Alerts
+    services_cache = {}
+    for a in data['alerts']:
+        # Identify service (if any)
+        service = None
+        if 'service' in a:
+            try:
+                service = services_cache[a['service']]
+            except KeyError:
+                service = _identify_service(ssn, server, a['service'])
+                services_cache[service.name] = service
+                ssn.add(service)
+
+        # Raise
+        alert = models.Alert(
+            server=server,
+            service=service,
+            channel='api',
+            event='api',
+            title=unicode(a['title']),
+            message=unicode(a['message']) if 'message' in a else u''
+        )
+        ssn.add(alert)
 
     # Save
     ssn.commit()

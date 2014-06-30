@@ -35,7 +35,7 @@ class Service(Base):
     id = Column(Integer, primary_key=True, nullable=False)
     server_id = Column(Integer, ForeignKey(Server.id, ondelete='CASCADE'), nullable=False, doc="Server id")
 
-    period = Column(Integer, nullable=False, doc="Expected reporting period, seconds")
+    period = Column(Integer, nullable=True, doc="Expected reporting period, seconds")
 
     name = Column(String(32), nullable=False, doc="Service machine name (as reported from the remote)")
     title = Column(Unicode(64), nullable=False, default=u'', doc="Service title")
@@ -56,7 +56,7 @@ class ServiceState(Base):
     id = Column(BigInteger, primary_key=True, nullable=False)
     service_id = Column(Integer, ForeignKey(Service.id, ondelete='CASCADE'), nullable=False, doc="Service id")
 
-    checked = Column(Boolean, nullable=False, default=False, doc="State checked?")
+    checked = Column(Boolean, nullable=False, default=False, doc="State checked (alerts created)?")
     rtime = Column(DateTime, default=datetime.utcnow, doc="Received time")
 
     state = Column(Enum('', 'OK', 'WARN', 'FAIL', name='service_state'), default='', nullable=False, doc='Service status')
@@ -82,7 +82,7 @@ Service.state = relationship(ServiceState, viewonly=True,
 
 
 
-class Alerts(Base):
+class Alert(Base):
     """ Reported alerts """
     __tablename__ = 'alerts'
 
@@ -90,10 +90,9 @@ class Alerts(Base):
     server_id = Column(Integer, ForeignKey(Server.id, ondelete='CASCADE'), nullable=True, doc="Server id")
     service_id = Column(Integer, ForeignKey(Service.id, ondelete='CASCADE'), nullable=True, doc="Service id")
 
-    reported = Column(Boolean, nullable=False, default=False, doc="Alert reported?")
+    reported = Column(Boolean, nullable=False, default=False, doc="Alert reported (notifications sent)?")
     ctime = Column(DateTime, default=datetime.utcnow, doc="Creation time")
 
-    severity = Column(SmallInteger, nullable=False, default=0, doc='Alert severity')
     channel = Column(String(32), nullable=False, doc="Alert channel")
     event = Column(String(32), nullable=False, doc="Alert event")
 
