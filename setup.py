@@ -16,8 +16,13 @@ setup(
     long_description=open('README.md').read(),
     keywords=['monitoring'],
 
-    packages=['overc'],
+    packages=['overc', 'overcli'],
     scripts=[],
+    entry_points={
+        'console_scripts': [
+            'overcli = overcli:main',
+        ]
+    },
 
     install_requires=[
         'flask >= 0.10.1',

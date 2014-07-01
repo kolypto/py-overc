@@ -16,6 +16,29 @@ Sending Data
 ============
 
 OverC uses an extremely simple JSON protocol to report arbitrary monitoring data.
+You can use the API as you like, but there also is a [command-line overclient tool](#overclient) available.
+
+In general, the following HTTP codes can be sent in response:
+
+In response, you get one of the following HTTP codes:
+
+* `200`: success
+* `400`: malformed request (e.g. not enough data provided)
+* `403`: authentication failed (e.g. wrong server key)
+
+Ping
+----
+
+Checks whether the connection works fine:
+
+```json
+{
+  "server": { "name": "localhost", "key": "1234" }
+}
+```
+
+In addition to connection-checking, it also tests server authentication.
+Proceed to the next section for more information.
 
 Reporting Services
 ------------------
@@ -40,6 +63,10 @@ Keys explained:
   
   Whenever a Server reports for the first time, OverC remembers it and stores its name and access key. 
   Subsequent connections are only authorized if the same server key is used.
+  
+  You can provide any name/key pair for the server identification: the server is automatically registered at OverC.
+  Just make sure you keep using the same identification pair: if you try to send a key that's different from the one 
+  that was used initially, you'll get an `403 Forbidden` error in response.
 
 * `"period"` is the reporting period in seconds the server promises to keep.
   
@@ -60,6 +87,8 @@ Keys explained:
     Any additional information can be reported with `"info"`: arbitrary string with runtime data.
 
 Note that there's no need to explicitly define Servers and Services: all data is accepted automatically.
+
+
 
 Reporting Alerts
 ----------------
@@ -86,3 +115,45 @@ Keys explained:
     
     * `"message"`: alert message text
     * `"service"`: (optional) service name to report the alert for, if any.
+
+
+
+
+
+
+Overclient
+==========
+
+OverC comes with a command-line client utility which allows to interact with OverC server.
+
+Two main arguments are:
+
+    * `-s`, `--server`: OverC server URL. Example: `http://localhost:5000/`
+    * `-i`, `--server-id`: Server identification, `<server-name>:<server-key>`. Example: 'localhost:1234'.
+    
+      Identification pair is arbitrary, just keep using the same key.
+
+This way, most commands are invoked like this:
+
+    $ overclient -s 'http://localhost:5000' -i 'localhost:1234' <command-name> [arguments...]
+    
+Example: use `ping` to test the connection:
+
+    $ overclient -s 'http://localhost:5000' -i 'localhost:1234' ping
+    
+Example: report single service's state:
+
+    $ overclient -s 'http://localhost:5000' -i 'localhost:1234' service-status 60 'application' 'OK' 'Runs fine'
+    
+Example: report a single alert:
+
+    $ overclient -s 'http://localhost:5000' -i 'localhost:1234' alert "Something bad has happened"
+    
+    
+    
+Continuous Monitoring
+---------------------
+
+The tools described above are just thin wrappers around the HTTP JSON client and are probably not enough for real
+monitoring challenges.
+
