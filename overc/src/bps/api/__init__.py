@@ -38,6 +38,7 @@ def _identify_server(ssn, server_spec):
     else:
         # Create
         server = models.Server(name=server_spec['name'], title=unicode(server_spec['name']), key=server_spec['key'])
+        logger.info(u'Created new Server(name="{name}")'.format(**server_spec))
 
     # Update IP
     server.ip = request.remote_addr
@@ -63,6 +64,7 @@ def _identify_service(ssn, server, service_name):
     ).first()
     if service is None:
         service = models.Service(server=server, name=service_name, title=unicode(service_name))
+        logger.info(u'Created new Service(name="{name}", server="{server}")'.format(name=service.name, server=server.name))
     return service
 
 
@@ -147,7 +149,7 @@ def set_service_status():
             s['state'] = 'UNK'
         state = models.ServiceState(service=service, state=s['state'], info=s['info'])
         ssn.add(state)
-        logger.debug(u'Service {server}:`{name}` state update: {info} {state}'.format(server=server.name, **s))
+        logger.debug(u'Service {server}:`{name}` state update: {state}: {info}'.format(server=server.name, **s))
 
     # Save
     ssn.commit()

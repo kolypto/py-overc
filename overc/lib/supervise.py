@@ -81,7 +81,7 @@ def _check_service_timeouts(ssn):
         was_timed_out = s.timed_out
         seen_ago = s.update_timed_out()
 
-        logger.debug(u'Checking service {service}: timed_out={service.timed_out}, seen_ago={seen_ago}'.format(service=s, seen_ago=seen_ago))
+        logger.debug(u'Checking service {service}: seen_ago={seen_ago}: {timed_out}'.format(service=s, seen_ago=seen_ago, timed_out='TIMED OUT' if s.timed_out else 'ok'))
 
         # Changed?
         if was_timed_out != s.timed_out:
@@ -169,6 +169,7 @@ def supervise_once(app):
     sent_alerts = _send_pending_alerts(ssn, alertd_path, alerts_config)
 
     # Finish
+    logger.debug('Supervise loop finished: {} new alerts, {} sent alerts'.format(new_alerts, sent_alerts))
     return new_alerts, sent_alerts
 
 
