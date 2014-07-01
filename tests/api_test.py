@@ -183,7 +183,7 @@ class ApiTest(ApplicationTest, unittest.TestCase):
         """ Test how alerts are created when the service state changes """
         # Prerequisites
         overc_log = '/tmp/overc.log'
-        self.app.app.config['ALERTS'] = { 'test': ('./fwrite.sh', overc_log) }
+        self.app.app.config['ALERTS'] = { 'test': ('./log.sh', overc_log) }
 
         def overc_readlog():
             """ Read overc.log and remove """
@@ -224,7 +224,7 @@ class ApiTest(ApplicationTest, unittest.TestCase):
             u'State changed: "(?)" -> "UNK"'
             '\n'
             u'Current: UNK: hey2 (sent unsupported state: "BULLSHIT")'
-            '\n\n'
+            '\n'
         )
 
         # Test a: OK -> WARN
@@ -241,7 +241,7 @@ class ApiTest(ApplicationTest, unittest.TestCase):
             u'State changed: "OK" -> "WARN"'
             '\n'
             u'Current: WARN: hey3'
-            '\n\n'
+            '\n'
         )
 
         # Test a: WARN -> WARN
@@ -266,7 +266,7 @@ class ApiTest(ApplicationTest, unittest.TestCase):
             u'State changed: "WARN" -> "OK"'
             '\n'
             u'Current: OK: hey5'
-            '\n\n'
+            '\n'
         )
 
         # Test a: OK -> (timeout)
@@ -286,7 +286,7 @@ class ApiTest(ApplicationTest, unittest.TestCase):
             ur'Service offline: last seen 0:00:\d+ ago'
             '\n'
             u'Current: OK: hey6'
-            '\n\n'
+            '\n'
         )
 
         # Still offline, it should not report again
@@ -305,7 +305,7 @@ class ApiTest(ApplicationTest, unittest.TestCase):
             u'Service back online'
             '\n' +
             u'Current: OK: hey7'
-            '\n\n'
+            '\n'
         )
 
         # Still online, it should not report again
@@ -326,15 +326,61 @@ class ApiTest(ApplicationTest, unittest.TestCase):
             u'localhost: '
             u'[api/alert] '
             u'Server lags'
-            '\n\n'
+            '\n'
             u'localhost test: '
             u'[api/alert] '
             u'Service down again'
-            '\n\n'
+            '\n'
         )
 
         # Should not report again
         self.assertEqual(supervise_once(self.app), (0, 0))  # no alerts
+
+
+
+        # See how a failing script behaves
+        self.app.app.config['ALERTS'] = {
+            'fail': ('./error.sh',),
+            'test': ('./log.sh', overc_log),
+        }
+
+        self.send_alerts({'name': 'localhost', 'key': '1234'}, [
+            dict(message='Server lags'),
+        ])
+        self.assertEqual(res['ok'], 1)
+        self.assertEqual(supervise_once(self.app), (0, 1))  # 1 alert, but 1 additional fatal
+
+        self.assertEqual(
+            overc_readlog(),
+            u'localhost: '
+            u'[api/alert] '
+            u'Server lags'
+            '\n'
+            u'Alert plugin `fail` failed: Command \'./error.sh\' returned non-zero exit status 1'
+            '\n'
+        )
+
+        # See how a missing script behaves
+        self.app.app.config['ALERTS'] = {
+            'nonexistent': ('./nonexistent.sh',),
+            'test': ('./log.sh', overc_log),
+        }
+
+        self.send_alerts({'name': 'localhost', 'key': '1234'}, [
+            dict(message='Server lags'),
+        ])
+        self.assertEqual(res['ok'], 1)
+        self.assertEqual(supervise_once(self.app), (0, 1))  # 1 alert, but 1 additional fatal
+
+        self.assertEqual(
+            overc_readlog(),
+            u'localhost: '
+            u'[api/alert] '
+            u'Server lags'
+            '\n'
+            u'Alert plugin `nonexistent` failed: [Errno 2] No such file or directory'
+            '\n'
+        )
 
     def test_unicode(self):
         """ Check how API handles unicode """

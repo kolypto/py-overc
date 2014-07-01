@@ -38,15 +38,21 @@ def execute_alert_plugin(plugins_path, plugin, arguments, message):
         cwd=plugins_path,
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE
+        stderr=subprocess.STDOUT
     )
+
     try:
+        # Run
         process.stdin.write(message)
         process.stdin.close()
+
+        # Wait, analyze retcode
         process.wait()
-    except Exception as e:
-        e.message += process.stderr.read() + process.stdout.read()
-        raise
+
+        if process.returncode != 0:
+            raise subprocess.CalledProcessError(process.returncode, ' '.join(command), '')
+    finally:
+        process.stdout.close()
 
 
 def send_alert_to_subscribers(alertd_path, alerts_config, message):
@@ -68,6 +74,10 @@ def send_alert_to_subscribers(alertd_path, alerts_config, message):
         except Exception as e:
             logger.exception('Alert plugin `{}` failed with args: {}'.format(plugin_name, plugin_args))
             plugin_failures.append((plugin_name, e))
+
+    # No failures? Good
+    if not plugin_failures:
+        return
 
     # Report plugin errors. Any plugin is sufficient
     plugin_failures = "\n".join([ 'Alert plugin `{}` failed: {}'.format(plugin_name, e) for plugin_name, e in plugin_failures ])

@@ -1,10 +1,10 @@
 #! /usr/bin/env bash
 set -eu
 
+# Simply logs its input to a file
 # Arguments:
-#   filename
+#   - filename: file to append the input to
 # stdin: message
-# Simply appends its input to the file
 
 message=$(cat)
 filename=$1
