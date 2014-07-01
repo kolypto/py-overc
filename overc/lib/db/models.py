@@ -23,6 +23,7 @@ class Server(Base):
     title = Column(Unicode(64), nullable=False, doc="Server title")
     name = Column(String(32), nullable=False, doc="Server machine name (as reported from the remote)")
     key = Column(String(32), nullable=False, doc="Authentication key")
+    ip = Column(String(46), nullable=True, doc='IP-address')
 
     __table_args__ = (
         UniqueConstraint(name),

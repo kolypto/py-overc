@@ -1,3 +1,5 @@
+from logging import getLogger
+
 from flask import Blueprint
 from flask.globals import g, request
 from werkzeug.exceptions import Forbidden
@@ -6,6 +8,7 @@ from overc.lib.db import models
 from overc.lib.flask.json import jsonapi
 
 bp = Blueprint('api', __name__, url_prefix='/api')
+logger = getLogger(__name__)
 
 
 def _identify_server(ssn, server_spec):
@@ -28,12 +31,19 @@ def _identify_server(ssn, server_spec):
     server = ssn.query(models.Server).filter(models.Server.name == server_spec['name']).first()
     if server is not None:
         # Check key
-        if server.key != server_spec['key']:
+        key_ok = server.key != server_spec['key']
+        if key_ok:
+            logger.warning(u'Invalid server key supplied: name="{name}", key="{key}"'.format(**server_spec))
             raise Forbidden('Invalid server key')
     else:
         # Create
         server = models.Server(name=server_spec['name'], title=unicode(server_spec['name']), key=server_spec['key'])
 
+    # Update IP
+    server.ip = request.remote_addr
+
+    # Finish
+    logger.debug(u'Identified server by name="{name}", id={id}'.format(id=server.id or '<new server>', **server_spec))
     return server
 
 
@@ -54,6 +64,30 @@ def _identify_service(ssn, server, service_name):
     if service is None:
         service = models.Service(server=server, name=service_name, title=unicode(service_name))
     return service
+
+
+@bp.route('/ping', methods=['POST'])
+@jsonapi
+def ping():
+    """ Test connection and server credentials
+
+        Status codes:
+            400 invalid input
+            403 invalid server key
+    """
+    ssn = g.db
+
+    # Input validation
+    data = request.get_json()
+    assert isinstance(data, dict), 'Invalid data: should be JSON object'
+    assert 'server' in data, 'Data: "server" key is missing'
+
+    # Identify server (will raise exception if not fine)
+    server = _identify_server(ssn, data['server'])
+    ssn.add(server)
+    ssn.commit()
+
+    return {'pong': 1}
 
 
 @bp.route('/set/service/status', methods=['POST'])
@@ -109,10 +143,11 @@ def set_service_status():
 
         # State
         if not models.state_t.is_valid(s['state']):
-            s['info'] += ' (sent unsupported state: "{}")'.format(s['state'])
+            s['info'] += u' (sent unsupported state: "{}")'.format(s['state'])
             s['state'] = 'UNK'
         state = models.ServiceState(service=service, state=s['state'], info=s['info'])
         ssn.add(state)
+        logger.debug(u'Service {server}:`{name}` state update: {info} {state}'.format(server=server.name, **s))
 
     # Save
     ssn.commit()
@@ -173,6 +208,7 @@ def set_alerts():
             message=unicode(a['message'])
         )
         ssn.add(alert)
+        logger.debug(u'Alert reported for {server}:`{service}`: {message}'.format(server=server.name, service=service.name if service else '-', message=a['message']))
 
     # Save
     ssn.commit()

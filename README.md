@@ -56,6 +56,8 @@ Keys explained:
     * `"ERR"`: critical error condition
     * `"UNK"`: unknown, which probably means that its state cannot be retrieved.
     * Any other string is converted to `"UNK"`.
+    
+    Any additional information can be reported with `"info"`: arbitrary string with runtime data.
 
 Note that there's no need to explicitly define Servers and Services: all data is accepted automatically.
 

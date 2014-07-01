@@ -1,3 +1,5 @@
+# -*- coding: utf-8 -*-
+
 from time import sleep
 import unittest
 import os
@@ -62,6 +64,27 @@ class ApiTest(ApplicationTest, unittest.TestCase):
             self.assertEqual(alert.channel, expected[i]['channel'])
             self.assertEqual(alert.event, expected[i]['event'])
             self.assertEqual(alert.message, expected[i]['message'])
+
+    def test_ping(self):
+        """ Test /api/ping """
+        # First ping: server is created
+        res, rv = self.test_client.jsonapi('POST', '/api/ping', { 'server': { 'name': 'localhost', 'key': '1234' } })
+        self.assertEqual(rv.status_code, 200)
+
+        # Server was created
+        server = self.db.query(models.Server).filter(models.Server.id == 1).first()
+        self.assertIsNotNone(server)
+        self.assertEqual(server.name, 'localhost')
+        self.assertEqual(server.title, 'localhost')
+        self.assertEqual(server.key, '1234')
+
+        # Second ping: still fine
+        res, rv = self.test_client.jsonapi('POST', '/api/ping', {'server': {'name': 'localhost', 'key': '1234'}})
+        self.assertEqual(rv.status_code, 200)
+
+        # Ping with a wrong key: error
+        res, rv = self.test_client.jsonapi('POST', '/api/ping', {'server': {'name': 'localhost', 'key': '1__4'}})
+        self.assertEqual(rv.status_code, 403)
 
     def test_service_status(self):
         """ Test /api/set/service/status """
@@ -312,3 +335,10 @@ class ApiTest(ApplicationTest, unittest.TestCase):
 
         # Should not report again
         self.assertEqual(supervise_once(self.app), (0, 0))  # no alerts
+
+    def test_unicode(self):
+        """ Check how API handles unicode """
+        res, rv = self.send_service_status({'name': u'сервер', 'key': u'ключ'}, [
+            { 'name': u'сервис', 'state': u'ХОРОШО', 'info': u'Всё отлично' }
+        ])
+        self.assertEqual(rv.status_code, 200)
