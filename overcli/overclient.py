@@ -40,7 +40,9 @@ class Overclient(object):
         return res
 
     def ping(self):
-        """ Test connection """
+        """ Test connection
+        :exception urllib2.URLError: Connection errors
+        """
         return self._jsonpost('/api/ping', {
             'server': self._server_id
         })
@@ -51,6 +53,7 @@ class Overclient(object):
         :type period: int
         :param services: List of services to report
         :type services: list
+        :exception urllib2.URLError: Connection errors
         """
         return self._jsonpost('/api/set/service/status', {
             'server': self._server_id,
@@ -62,6 +65,7 @@ class Overclient(object):
         """ Send alerts
         :param alerts: Alerts to report
         :type alerts: list
+        :exception urllib2.URLError: Connection errors
         """
         return self._jsonpost('/api/set/alerts', {
             'server': self._server_id,

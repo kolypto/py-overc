@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 
 import os, argparse
-from threading import Thread
+import multiprocessing
 
 from overc import OvercApplication
 from overc.lib.supervise import supervise_loop
@@ -27,9 +27,9 @@ if __name__ == '__main__':
     # Only if in the main thread (not Werkzeug "reloader" thread)
     if not os.environ.get('WERKZEUG_RUN_MAIN'):
         # Supervisor thread
-        t = Thread(target=supervise_loop, args=(app,))
-        t.daemon = True
-        t.start()
+        p = multiprocessing.Process(name='supervisor', target=supervise_loop, args=(app,))
+        p.daemon = True
+        p.start()
 
     # Launch app
     app.run(args.bindto)

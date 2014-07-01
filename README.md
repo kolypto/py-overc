@@ -16,7 +16,8 @@ Sending Data
 ============
 
 OverC uses an extremely simple JSON protocol to report arbitrary monitoring data.
-You can use the API as you like, but there also is a [command-line overclient tool](#overclient) available.
+You can use the API as you like, but there also is a [command-line overclient tool](#overclient) available
+which offers a complete solution.
 
 In general, the following HTTP codes can be sent in response:
 
