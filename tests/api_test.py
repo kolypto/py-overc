@@ -150,10 +150,10 @@ class ApiTest(ApplicationTest, unittest.TestCase):
 
         # Check alerts
         self.assertAlerts(server, [
-            dict(id=1, service_id=None, reported=False, channel='api', event='api', message=u'Server lags'),
-            dict(id=2, service_id=None, reported=False, channel='api', event='api', message=u'Too much logs'),
-            dict(id=3, service_id=1, reported=False, channel='api', event='api', message=u'Service down'),
-            dict(id=4, service_id=1, reported=False, channel='api', event='api', message=u'Service down again'),
+            dict(id=1, service_id=None, reported=False, channel='api', event='alert', message=u'Server lags'),
+            dict(id=2, service_id=None, reported=False, channel='api', event='alert', message=u'Too much logs'),
+            dict(id=3, service_id=1, reported=False, channel='api', event='alert', message=u'Service down'),
+            dict(id=4, service_id=1, reported=False, channel='api', event='alert', message=u'Service down again'),
         ])
 
     def test_supervisor(self):
