@@ -1,9 +1,6 @@
 import os
 import logging
-from datetime import datetime, timedelta
 from time import sleep
-from sqlalchemy.orm.scoping import scoped_session
-from sqlalchemy.orm.session import sessionmaker
 
 from overc.lib.db import models
 from overc.lib import alerts

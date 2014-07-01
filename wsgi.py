@@ -1,5 +1,8 @@
 import os, argparse
+from threading import Thread
+
 from overc import OvercApplication
+from overc.lib.supervise import supervise_loop
 
 # Arguments
 parser = argparse.ArgumentParser(description='WSGI application launcher')
@@ -14,4 +17,8 @@ app = OvercApplication(
 )
 
 if __name__ == '__main__':
+    # Supervisor thread
+    Thread(target=supervise_loop, args=(app,))
+
+    # Launch app
     app.run(args.bindto)
