@@ -27,6 +27,7 @@ def _check_service_states(ssn):
     new_alerts = 0
     for s in service_states:
         alert = None
+        logger.debug(u'Checking service {server}:`{service}` state #{id}: {state}'.format(id=s.id, server=s.service.server, service=s.service, state=s.state))
 
         # Report state changes and abnormal states
         if s.state != (s.prev.state if s.prev else 'OK'):
@@ -80,6 +81,8 @@ def _check_service_timeouts(ssn):
         was_timed_out = s.timed_out
         seen_ago = s.update_timed_out()
 
+        logger.debug(u'Checking service {service}: timed_out={service.timed_out}, seen_ago={seen_ago}'.format(service=s, seen_ago=seen_ago))
+
         # Changed?
         if was_timed_out != s.timed_out:
             alert = models.Alert(
@@ -123,6 +126,8 @@ def _send_pending_alerts(ssn, alertd_path, alerts_config):
 
     # Report them one by one
     for a in pending_alerts:
+        logger.debug(u'Sending alert #{id}: server={server}, service={service}, [{channel}/{event}]'.format(id=a.id, server=a.server, service=a.service, channel=a.channel, event=a.event))
+
         # Prepare alert message
         alert_message = unicode(a) + "\n"
         if a.service and a.service.state:
