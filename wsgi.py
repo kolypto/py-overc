@@ -1,3 +1,5 @@
+#! /usr/bin/env python
+
 import os, argparse
 from threading import Thread
 
