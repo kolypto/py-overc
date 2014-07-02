@@ -32,4 +32,9 @@ if __name__ == '__main__':
         p.start()
 
     # Launch app
-    app.run(args.bindto)
+    bindo_host, bindto_port = args.bindto.split(':')
+
+    app.run(
+        host=bindo_host or '0.0.0.0',
+        port=int(bindto_port)
+    )

@@ -42,12 +42,26 @@ class OvercApplication(object):
 
         # Blueprints
         from .bps import api
+        from .bps import ui
         self.app.register_blueprint(api.bp, url_prefix='/api')
+        self.app.register_blueprint(ui.bp, url_prefix='/', static_url_path='static/ui')
 
-    def run(self, bindto):
-        """ Launch application """
-        host, port = bindto.split(':')
-        self.app.run(
-            host=host or '0.0.0.0',
-            port=int(port)
-        )
+    def run(self, **options):
+        """ Launch application (debug mode) """
+        options.setdefault('use_reloader', self.app.debug)
+        options.setdefault('use_debugger', self.app.debug)
+        app = self.app
+
+        if not self.app.debug:
+            return app.run(**options)
+
+        # Serve static files in debug mode
+        from werkzeug.wsgi import SharedDataMiddleware
+        from werkzeug.serving import run_simple
+
+        app = SharedDataMiddleware(app, {
+            '/static/ui': ('overc.src.bps.ui', 'static')
+        }, cache=self.app.debug)
+
+        options['hostname'] = options.pop('host')
+        run_simple(application=app, **options)
