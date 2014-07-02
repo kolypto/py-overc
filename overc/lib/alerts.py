@@ -70,6 +70,7 @@ def send_alert_to_subscribers(alertd_path, alerts_config, message):
     plugin_failures = []
     for plugin_name, plugin_args in alerts_config.items():
         try:
+            print alertd_path
             execute_alert_plugin(alertd_path, plugin_args[0], plugin_args[1:], message)
         except Exception as e:
             logger.exception('Alert plugin `{}` failed with args: {}'.format(plugin_name, plugin_args))

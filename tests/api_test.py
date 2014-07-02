@@ -184,6 +184,7 @@ class ApiTest(ApplicationTest, unittest.TestCase):
         # Prerequisites
         overc_log = '/tmp/overc.log'
         self.app.app.config['ALERTS'] = { 'test': ('./log.sh', overc_log) }
+        self.app.app.instance_path = os.path.realpath('tests/data/overc-instance')
 
         def overc_readlog():
             """ Read overc.log and remove """
@@ -217,7 +218,7 @@ class ApiTest(ApplicationTest, unittest.TestCase):
         ])
         self.assertEqual(res['ok'], 1)
         self.assertEqual(supervise_once(self.app), (1, 1)) # 1 alert
-        self.assertEqual(
+        self.assertMultiLineEqual(
             overc_readlog(),
             u'localhost b: '
             u'[service:state/changed] '
@@ -234,7 +235,7 @@ class ApiTest(ApplicationTest, unittest.TestCase):
         ])
         self.assertEqual(res['ok'], 1)
         self.assertEqual(supervise_once(self.app), (1, 1)) # 1 alert
-        self.assertEqual(
+        self.assertMultiLineEqual(
             overc_readlog(),
             u'localhost a: '
             u'[service:state/changed] '
@@ -259,7 +260,7 @@ class ApiTest(ApplicationTest, unittest.TestCase):
         ])
         self.assertEqual(res['ok'], 1)
         self.assertEqual(supervise_once(self.app), (1, 1))  # 1 alert
-        self.assertEqual(
+        self.assertMultiLineEqual(
             overc_readlog(),
             u'localhost a: '
             u'[service:state/changed] '
@@ -298,7 +299,7 @@ class ApiTest(ApplicationTest, unittest.TestCase):
         ], period=60)
         self.assertEqual(res['ok'], 1)
         self.assertEqual(supervise_once(self.app), (1, 1))  # 1 alert
-        self.assertEqual(
+        self.assertMultiLineEqual(
             overc_readlog(),
             u'localhost a: '
             u'[service/online] '
@@ -321,7 +322,7 @@ class ApiTest(ApplicationTest, unittest.TestCase):
         self.assertEqual(res['ok'], 1)
         self.assertEqual(supervise_once(self.app), (0, 2))  # 2 alerts
 
-        self.assertEqual(
+        self.assertMultiLineEqual(
             overc_readlog(),
             u'localhost: '
             u'[api/alert] '
@@ -350,7 +351,7 @@ class ApiTest(ApplicationTest, unittest.TestCase):
         self.assertEqual(res['ok'], 1)
         self.assertEqual(supervise_once(self.app), (0, 1))  # 1 alert, but 1 additional fatal
 
-        self.assertEqual(
+        self.assertMultiLineEqual(
             overc_readlog(),
             u'localhost: '
             u'[api/alert] '
@@ -372,7 +373,7 @@ class ApiTest(ApplicationTest, unittest.TestCase):
         self.assertEqual(res['ok'], 1)
         self.assertEqual(supervise_once(self.app), (0, 1))  # 1 alert, but 1 additional fatal
 
-        self.assertEqual(
+        self.assertMultiLineEqual(
             overc_readlog(),
             u'localhost: '
             u'[api/alert] '
