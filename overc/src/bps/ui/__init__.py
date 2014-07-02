@@ -1,3 +1,4 @@
+from datetime import datetime
 from logging import getLogger
 
 from flask import Blueprint
@@ -24,10 +25,10 @@ def index():
 
 #region API
 
-@bp.route('/api/refresh', defaults={'server_id': None})
-@bp.route('/api/refresh/<server_id>')
+@bp.route('/api/status/server', defaults={'server_id': None})
+@bp.route('/api/status/server/<server_id>')
 @jsonapi
-def api_refresh(server_id=None):
+def api_services(server_id=None):
     """ Get all available information """
     ssn = g.db
 
@@ -49,20 +50,17 @@ def api_refresh(server_id=None):
                     {
                         'id': service.id,
                         'period': service.period,
-                        'timed_out': service.timed_out,
                         'name': service.name,
                         'title': service.title,
                         'state': {
                             'rtime': service.state.rtime.isoformat(sep=' '),
+                            'timed_out': service.timed_out,
+                            'seen_ago': str(datetime.utcnow() - service.state.rtime).split('.')[0],
                             'state': service.state.state,
                             'info': service.state.info,
-                        } if service.state else {
-                            'rtime': None,
-                            'state': 'UNK',
-                            'info': ''
-                        }
+                        } if service.state else None
                     } for service in server.services
-                ], cmp, lambda s: s['state']['rtime'])
+                ], cmp, lambda s: s['name'])
             } for server in servers
         ], cmp, lambda s: s['name'])
     }

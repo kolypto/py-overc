@@ -51,8 +51,7 @@ class Service(Base):
     server = relationship(Server, foreign_keys=server_id, backref='services')
 
     __table_args__ = (
-        UniqueConstraint(name),
-        Index('idx_serverid', server_id),
+        UniqueConstraint(server_id, name),
     )
 
     def update_timed_out(self):
