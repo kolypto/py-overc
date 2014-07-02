@@ -29,10 +29,13 @@ class Service(object):
     def __str__(self):
         return self.name
 
+    PERIOD_MARGIN_FACTOR = 0.8
+    LAG_MARGIN_FACTOR = 3.0
+
     @property
     def real_period(self):
         """ Real update period, including lags and safety reserves """
-        return max(self.period * 0.8 - self.lag * 3.0, 0.0)
+        return max(self.period * self.PERIOD_MARGIN_FACTOR - self.lag * self.LAG_MARGIN_FACTOR, 0.0)
 
     def next_update_in(self, now):
         """ Get the relative time for the next update
@@ -92,7 +95,7 @@ class Service(object):
             return {
                 'name': self.name,
                 'state': state,
-                'info': info
+                'info': unicode(info).rstrip()
             }
         finally:
             process.stdout.close()
@@ -124,7 +127,9 @@ class ServicesMonitor(object):
 
             # Ok?
             if service.lag > service.period*0.5:
-                logger.warning('Service `{}` execution lag is too high: {}s'.format(service.name))
+                period_inc = service.lag * 2
+                logger.warning('Service `{}` execution lag is too high: {}s. Period increased by {}'.format(service.name, service.lag, period_inc))
+                service.period += period_inc
 
         # Run
         threads = [threading.Thread(target=task, args=(service,)) for service in self.services]
@@ -181,6 +186,9 @@ class ServicesMonitor(object):
                      for service in self.services
                      if service.next_update_in(now) <= max_lag
         ]
+        if not services:
+            return 0, []
+
         period = max(service.period for service in services)
 
         # Test them

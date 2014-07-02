@@ -32,6 +32,7 @@ setup(
     extras_require={
         'mysql': ['mysql-python >= 1.2.5'],
         'pgsql': ['psycopg2 >= 2.5.2'],
+        'tests': ['freezegun >= 0.1.18']
     },
     include_package_data=True,
 
