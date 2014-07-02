@@ -5,7 +5,7 @@ from sqlalchemy.orm.session import object_session
 from sqlalchemy.sql.schema import Column, ColumnDefault
 from sqlalchemy.sql.schema import ForeignKey, UniqueConstraint, Index
 from sqlalchemy import Boolean, SmallInteger, Integer, BigInteger, Float, String, Text, Unicode, UnicodeText, Binary, DateTime, Enum
-from sqlalchemy.orm import relationship, remote, foreign
+from sqlalchemy.orm import relationship, backref, remote, foreign
 
 from sqlalchemy.sql.expression import select, and_, func
 
@@ -161,8 +161,8 @@ class Alert(Base):
     event = Column(String(32), nullable=False, doc="Alert event")
     message = Column(UnicodeText, nullable=False, doc="Alert details")
 
-    server = relationship(Server, foreign_keys=server_id, backref='alerts')
-    service = relationship(Service, foreign_keys=service_id, backref='alerts')
+    server = relationship(Server, foreign_keys=server_id, backref=backref('alerts', order_by=id.desc()))
+    service = relationship(Service, foreign_keys=service_id, backref=backref('alerts', order_by=id.desc()))
 
     __table_args__ = (
         Index('idx_reported', reported),

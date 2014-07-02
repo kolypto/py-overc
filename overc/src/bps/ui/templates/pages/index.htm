@@ -17,38 +17,43 @@
 <div class="container-fluid" ng-app="overcApplication" ng-cloak>
 
     <!-- Navbar -->
-    <nav class="navbar navbar-default" role="navigation">
+    <!--nav class="navbar navbar-default" role="navigation">
         <div class="container-fluid">
             <div class="navbar-header">
                 <a class="navbar-brand" href="#">OverC</a>
             </div>
         </div>
-    </nav>
+    </nav-->
     <!-- /Navbar -->
 
     {% raw %}<!-- Services -->
     <div class="row" ng-controller="servicesController">
 
-        <div class="col-md-6">
+        <div class="col-md-8">
 
             <table class="table table-striped table-bordered table-condensed" id="services">
-                <caption>Services</caption>
+                <caption>
+                    Services
+                    <div class="label label-danger" ng-if="n_alerts" title="Alerts today">{{ n_alerts }}</div>
+                </caption>
                 <THEAD>
                     <tr><th>Server</th><th>Service</th><th>State</th><th>Info</th></tr>
                 </THEAD>
                 <TBODY ng-repeat="server in servers track by server.id">
                     <tr ng-repeat="service in server.services track by service.id">
                         <th class="col-md-2" rowspan="{{ server.services.length }}" ng-if="$first">
+                            <div class="label label-danger pull-right" ng-if="server.n_alerts" title="Alerts today">{{ server.n_alerts }}</div>
                             <a href="#">{{ server.title }}</a>
                             <div class="hint">{{ server.name }}, IP: {{ server.ip }}</div>
                         </th>
                         <td class="col-md-2">
+                            <div class="label label-danger pull-right" ng-if="service.n_alerts" title="Alerts today">{{ service.n_alerts }}</div>
                             <a href="#">{{ service.title }}</a>
                             <div class="hint">{{ service.name }}, period: {{ service.period }}s</div>
                         </td>
-                        <td class="service-state state-{{ service.state.state }} col-md-2" ng-if="service.state">
+                        <td class="col-md-2 service-state state-{{ service.state.state }}" ng-if="service.state">
                             {{ service.state.state }}
-                            <div class="label label-danger pull-right" ng-if="service.state.timed_out">Timeout</div>
+                            <div class="label label-danger pull-right" ng-if="service.state.timed_out" title="Service did not report in time">Timeout</div>
                             <div class="hint">Seen: {{ service.state.seen_ago }} ago</div>
                         </td>
                         <td ng-if="!service.state">?</td>
@@ -65,6 +70,28 @@
     {% raw %}<!-- Alerts -->
     <div class="row" ng-controller="alertsController">
 
+        <div class="col-md-8">
+
+            <table class="table table-striped table-bordered table-condensed" id="alerts">
+                <caption>
+                    Alerts
+                </caption>
+                <THEAD>
+                    <tr><th>Date</th><th>Server</th><th>Service</th><th>Channel / Event</th><th>Message</th></tr>
+                </THEAD>
+                <TBODY>
+                    <tr ng-repeat="alert in alerts track by alert.id">
+                        <td>{{ alert.ctime }}</td>
+                        <td><a href="#">{{ alert.server }}</a></td>
+                        <td><a href="#">{{ alert.service }}</a></td>
+                        <td>{{ alert.channel }} / {{ alert.event }}</td>
+                        <td>{{ alert.message }}</td>
+                    </tr>
+                </TBODY>
+            </table>
+
+        </div>
+
     </div>
     <!-- /Alerts -->{% endraw %}
 
@@ -74,6 +101,7 @@
 
     <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
     <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.19/angular.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.19/angular-resource.min.js"></script>
     <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/2.4.1/lodash.min.js"></script>
     <script src="{{ url_for('ui.static', filename='all.js') }}"></script>

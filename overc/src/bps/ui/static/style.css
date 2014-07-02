@@ -4,14 +4,23 @@
 }
 
 /* Generic */
-.hint {
+table caption {
+    line-height: 24px;
+    font-weight: bold;
+    border: 1px solid #EEE;
+    border-bottom: none;
+    border-radius: 10px 10px 0 0;
+}
+
+/* Services */
+#services .hint {
     font-size: 0.8em;
     font-weight: normal;
     color: #777;
 }
 
-/* Services */
 #services TBODY th { vertical-align: middle; }
+
 #services .service-state.state-UNK { background-image: url("img/icons/VistaBase/PNG/24x24/Circle_Grey.png"); }
 #services .service-state.state-OK { background-image: url("img/icons/VistaBase/PNG/24x24/Circle_Green.png"); }
 #services .service-state.state-WARN { background-image: url("img/icons/VistaBase/PNG/24x24/Circle_Orange.png"); }

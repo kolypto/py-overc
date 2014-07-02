@@ -1,6 +1,8 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from logging import getLogger
+from collections import defaultdict
 
+from sqlalchemy.sql import func
 from flask import Blueprint
 from flask.templating import render_template
 from flask.globals import g, request
@@ -25,10 +27,10 @@ def index():
 
 #region API
 
-@bp.route('/api/status/server', defaults={'server_id': None})
+@bp.route('/api/status/server')
 @bp.route('/api/status/server/<server_id>')
 @jsonapi
-def api_services(server_id=None):
+def api_status_server(server_id=None):
     """ Get all available information """
     ssn = g.db
 
@@ -38,20 +40,45 @@ def api_services(server_id=None):
         servers = servers.filter(models.Server.id == server_id)
     servers = servers.all()
 
-    # Prepare response
+    # Count alerts for 24h
+    alert_counts = ssn.query(
+        models.Alert.server_id,
+        models.Alert.service_id,
+        func.count(models.Alert)
+    ) \
+        .filter(
+            models.Alert.ctime >= (datetime.utcnow() - timedelta(hours=24)),
+            models.Alert.server_id == server_id if server_id else True
+        ) \
+        .group_by(models.Alert.server_id, models.Alert.service_id) \
+        .all()
+    server_alerts = defaultdict(lambda: 0)
+    service_alerts = defaultdict(lambda: 0)
+    total_alerts = 0
+    for (server_id, service_id, n) in alert_counts:
+        total_alerts += n
+        if service_id:
+            service_alerts[service_id] += n
+        elif server_id:
+            server_alerts[server_id] += n
+
+    #     Format
     return {
+        'n_alerts': total_alerts,  # alerts today (for all selected servers)
         'servers': sorted([
             {
                 'id': server.id,
                 'name': server.name,
                 'title': server.title,
                 'ip': server.ip,
+                'n_alerts': server_alerts[server.id],  # alerts today, for this server
                 'services': sorted([
                     {
                         'id': service.id,
                         'period': service.period,
                         'name': service.name,
                         'title': service.title,
+                        'n_alerts': service_alerts[service.id],  # alerts today, for this service
                         'state': {
                             'rtime': service.state.rtime.isoformat(sep=' '),
                             'timed_out': service.timed_out,
@@ -63,6 +90,46 @@ def api_services(server_id=None):
                 ], cmp, lambda s: s['name'])
             } for server in servers
         ], cmp, lambda s: s['name'])
+    }
+
+
+@bp.route('/api/status/alerts/server')
+@bp.route('/api/status/alerts/server/<server_id>')
+@bp.route('/api/status/alerts/service/<service_id>')
+@jsonapi
+def api_status_alerts(server_id=None, service_id=None):
+    """ Alerts for 24h """
+    ssn = g.db
+
+    dtime = timedelta(hours=int(request.args.get('hours', default=24)))
+
+    # Load alerts
+    alerts = ssn.query(models.Alert) \
+        .filter(
+            models.Alert.ctime >= (datetime.utcnow() - dtime),
+            models.Alert.server_id == server_id if server_id else True,
+            models.Alert.service_id == service_id if service_id else True
+        ) \
+        .order_by(models.Alert.id.desc()) \
+        .all()
+
+    # Format
+    return {
+        'alerts': [
+            {
+                'id': alert.id,
+                'server': unicode(alert.server) if alert.server else None,
+                'server_id': alert.server_id,
+                'service': unicode(alert.service) if alert.service else None,
+                'service_id': alert.service_id,
+
+                'ctime': alert.ctime.isoformat(sep=' '),
+                'channel': alert.channel,
+                'event': alert.event,
+                'message': alert.message
+            }
+            for alert in alerts
+        ]
     }
 
 #endregion
