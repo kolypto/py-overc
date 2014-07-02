@@ -25,13 +25,14 @@ setup(
     },
 
     install_requires=[
-        'flask >= 0.10.1',
-        'sqlalchemy >= 0.9.6',
-        'pytz >= 2014.4',
     ],
     extras_require={
-        'mysql': ['mysql-python >= 1.2.5'],
-        'pgsql': ['psycopg2 >= 2.5.2'],
+        'server': [
+            'flask >= 0.10.1',
+            'sqlalchemy >= 0.9.6',
+            'pytz >= 2014.4',
+            'mysql-python >= 1.2.5'
+        ],
         'tests': ['freezegun >= 0.1.18']
     },
     include_package_data=True,
