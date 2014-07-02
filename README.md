@@ -6,7 +6,7 @@ OverC (pronounced: oversee): simplistic monitoring solution that is a pleasure t
 Features:
 
 * Simplicity is the root of all genius: easy to configure and use
-* Dynamic and extensible: everything is an extenal plugin
+* Dynamic and extensible: everything is a plugin, in any scripting language
 * Agent-less: data is pushed to OverC server
 
 Installation
@@ -181,7 +181,7 @@ command=echo 1
 * Section `[service:<name>]` defines a service to be monitored and reported
     
     * `period` is the time period in seconds defining how often the service status should be reported
-    * `command` -- an arbitrary command that tests your service.
+    * `command` -- an arbitrary command that tests your service: monitoring plugin.
         
         The command should be a script which prints out the service info, and its return code defines the status:
         
@@ -193,6 +193,8 @@ command=echo 1
         | >= 3 | UNK    |
         
         Any other code is also converted to `"UNK"`.
+        
+        *NOTE*: This actually follows [Nagios Plugin API](http://nagios.sourceforge.net/docs/3_0/pluginapi.html), so they are reusable! :)
 
 Having this config file, just launch the monitor:
 
