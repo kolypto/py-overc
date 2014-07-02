@@ -202,3 +202,21 @@ Having this config file, just launch the monitor:
 
 All service states will be updated immediately, and continuously monitored ever since.
 Any fatal exceptions are reported as alerts to the monitoring server.
+
+For the sake of completeness, here's an example plugin which simply checks whether a process is running:
+
+```bash
+#! /usr/bin/env bash
+applicaton_name="$1"
+
+# Try to get PID of the running application, or die with code 2 ("FAIL")
+application_pid=$(pidof $applicaton_name) || { echo 'Not running!' ; exit 2 }
+
+# Running fine: print PID, exit with 0 ("OK")
+echo "PID: $application_pid"
+exit 0
+```
+
+Then use it like this:
+
+    command=./plugin.d/pid-check.sh "httpd"
