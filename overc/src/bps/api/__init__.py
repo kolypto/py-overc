@@ -1,3 +1,4 @@
+from datetime import datetime
 from logging import getLogger
 
 from flask import Blueprint
@@ -37,7 +38,11 @@ def _identify_server(ssn, server_spec):
             raise Forbidden('Invalid server key')
     else:
         # Create
-        server = models.Server(name=server_spec['name'], title=unicode(server_spec['name']), key=server_spec['key'])
+        server = models.Server(
+            name=server_spec['name'],
+            title=unicode(server_spec['name']),
+            key=server_spec['key']
+        )
         logger.info(u'Created new Server(name="{name}")'.format(**server_spec))
 
     # Update IP
@@ -63,7 +68,11 @@ def _identify_service(ssn, server, service_name):
         models.Service.name == service_name
     ).first()
     if service is None:
-        service = models.Service(server=server, name=service_name, title=unicode(service_name))
+        service = models.Service(
+            server=server,
+            name=service_name,
+            title=unicode(service_name)
+        )
         logger.info(u'Created new Service(name="{name}", server="{server}")'.format(name=service.name, server=server.name))
     return service
 
@@ -147,7 +156,12 @@ def set_service_status():
         if not models.state_t.is_valid(s['state']):
             s['info'] += u' (sent unsupported state: "{}")'.format(s['state'])
             s['state'] = 'UNK'
-        state = models.ServiceState(service=service, state=s['state'], info=s['info'])
+        state = models.ServiceState(
+            service=service,
+            rtime=datetime.utcnow(),
+            state=s['state'],
+            info=s['info']
+        )
         ssn.add(state)
         logger.debug(u'Service {server}:`{name}` state update: {state}: {info}'.format(server=server.name, **s))
 
@@ -205,6 +219,7 @@ def set_alerts():
         alert = models.Alert(
             server=server,
             service=service,
+            ctime=datetime.utcnow(),
             channel='api',
             event='alert',
             message=unicode(a['message'])

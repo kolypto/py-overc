@@ -25,7 +25,7 @@ class CustomFlaskClient(FlaskClient):
         # Send
         rv = self.open(
             uri,
-            method='POST',
+            method=method,
             content_type='application/json',
             data=json.dumps(body or {}),
             **kwargs

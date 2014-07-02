@@ -1,15 +1,49 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 	<meta charset=utf-8 />
 	<title>OverC</title>
 
-	<link rel="stylesheet" type="text/css" media="screen" href="{{ url_for('ui.static', filename='style.css') }}" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="icon" type="image/x-icon" href="{{ url_for('ui.static', filename='img/favicon-48.png') }}" />
+    <link rel="stylesheet" type="text/css" media="screen" href="{{ url_for('ui.static', filename='style.css') }}" />
+
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css">
 </head>
 <body>
 
+<div class="container-fluid" ng-app="overcApplication">
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-default" role="navigation">
+        <div class="container-fluid">
+            <div class="navbar-header">
+                <a class="navbar-brand" href="#">OverC</a>
+            </div>
+        </div>
+    </nav>
+    <!-- /Navbar -->
+
+    <!-- Services -->
+    <div class="row" ng-controller="servicesController">
+
+    </div>
+    <!-- /Services -->
+
+    <!-- Alerts -->
+    <div class="row" ng-controller="alertsController">
+
+    </div>
+    <!-- /Alerts -->
+
+</div>
+
 </body>
-<script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-<script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.19/angular.min.js"></script>
-<script src="{{ url_for('ui.static', filename='all.js') }}"></script>
+
+    <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.19/angular.min.js"></script>
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+    <script src="{{ url_for('ui.static', filename='all.js') }}"></script>
 </html>

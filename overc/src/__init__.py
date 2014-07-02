@@ -44,7 +44,7 @@ class OvercApplication(object):
         from .bps import api
         from .bps import ui
         self.app.register_blueprint(api.bp, url_prefix='/api')
-        self.app.register_blueprint(ui.bp, url_prefix='/', static_url_path='static/ui')
+        self.app.register_blueprint(ui.bp, url_prefix='/ui', static_url_path='static/ui')
 
     def run(self, **options):
         """ Launch application (debug mode) """
