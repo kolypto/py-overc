@@ -30,8 +30,16 @@ def cmd_alert(args, overc):
         alert['service'] = args.service
     overc.set_alerts([ alert ])
 
-
 def cmd_monitor(args, overc):
+    try:
+        _cmd_monitor_wrapped(args, overc)
+    except Exception as e:
+        overc.set_alerts([
+            u'Monitoring failure: {}: {}'.format(e.name, e.message)
+        ])
+        raise
+
+def _cmd_monitor_wrapped(args, overc):
     """ Perform continuous monitoring """
     cwd = os.path.dirname(args.config)
     if not os.path.exists(args.config):

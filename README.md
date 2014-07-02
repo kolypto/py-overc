@@ -129,8 +129,8 @@ OverC comes with a command-line client utility which allows to interact with Ove
 
 Two main arguments are:
 
-    * `-s`, `--server`: OverC server URL. Example: `http://localhost:5000/`
-    * `-i`, `--server-id`: Server identification, `<server-name>:<server-key>`. Example: 'localhost:1234'.
+* `-s`, `--server`: OverC server URL. Example: `http://localhost:5000/`
+* `-i`, `--server-id`: Server identification, `<server-name>:<server-key>`. Example: 'localhost:1234'.
     
       Identification pair is arbitrary, just keep using the same key.
 
@@ -144,7 +144,7 @@ Example: use `ping` to test the connection:
     
 Example: report single service's state:
 
-    $ overcli -s 'http://localhost:5000' -i 'localhost:1234' service-status 60 'application' 'OK' 'Runs fine'
+    $ overcli -s 'http://localhost:5000' -i 'localhost:1234' service-status 60 'app' 'OK' 'Runs fine'
     
 Example: report a single alert:
 
@@ -198,4 +198,5 @@ Having this config file, just launch the monitor:
 
     $ overcli -s 'http://localhost:5000' -i 'localhost:1234' monitor config.ini
 
-All service states will be updated immediately.
+All service states will be updated immediately, and continuously monitored ever since.
+Any fatal exceptions are reported as alerts to the monitoring server.
