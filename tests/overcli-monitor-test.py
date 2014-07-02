@@ -22,6 +22,7 @@ class MonitorTest(unittest.TestCase):
             'app': Service(15, 'app', cwd, './plugin.d/app.sh'),
             'que': Service(30, 'que', cwd, './plugin.d/que.sh'),
             'cpu': Service(30, 'cpu', cwd, './plugin.d/cpu.sh'),
+            'echo': Service(15, 'echo', cwd, 'echo 1'),
         }
         monitor = ServicesMonitor(services.values())
 
@@ -48,6 +49,7 @@ class MonitorTest(unittest.TestCase):
                 {'name': 'app', 'state': 'OK', 'info': u'Running fine'},
                 {'name': 'que', 'state': 'UNK', 'info': u'5 items'},
                 {'name': 'cpu', 'state': 'WARN', 'info': u'50%'},
+                {'name': 'echo', 'state': 'OK', 'info': u'1'},
             ])
 
             # Sleep time should be 15
@@ -67,10 +69,11 @@ class MonitorTest(unittest.TestCase):
             # Run
             period, service_states = monitor.check()
 
-            # Only `app` should be tested
+            # Only `app` and `echo` should be tested
             self.assertAlmostEqual(period, 15.0, delta=0.1)
             self.assertServiceStates(service_states, [
                 {'name': 'app', 'state': 'OK', 'info': u'Running fine'},
+                {'name': 'echo', 'state': 'OK', 'info': u'1'},
             ])
 
             # Sleep time should be 15
@@ -88,6 +91,7 @@ class MonitorTest(unittest.TestCase):
                 {'name': 'app', 'state': 'OK', 'info': u'Running fine'},
                 {'name': 'que', 'state': 'UNK', 'info': u'5 items'},
                 {'name': 'cpu', 'state': 'WARN', 'info': u'50%'},
+                {'name': 'echo', 'state': 'OK', 'info': u'1'},
             ])
 
             # Sleep time should be 15

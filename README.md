@@ -16,7 +16,7 @@ Sending Data
 ============
 
 OverC uses an extremely simple JSON protocol to report arbitrary monitoring data.
-You can use the API as you like, but there also is a [command-line overclient tool](#overclient) available
+You can use the API as you like, but there also is a [command-line overcli tool](#overcli) available
 which offers a complete solution.
 
 In general, the following HTTP codes can be sent in response:
@@ -122,8 +122,8 @@ Keys explained:
 
 
 
-Overclient
-==========
+Overcli
+=======
 
 OverC comes with a command-line client utility which allows to interact with OverC server.
 
@@ -136,19 +136,19 @@ Two main arguments are:
 
 This way, most commands are invoked like this:
 
-    $ overclient -s 'http://localhost:5000' -i 'localhost:1234' <command-name> [arguments...]
+    $ overcli -s 'http://localhost:5000' -i 'localhost:1234' <command-name> [arguments...]
     
 Example: use `ping` to test the connection:
 
-    $ overclient -s 'http://localhost:5000' -i 'localhost:1234' ping
+    $ overcli -s 'http://localhost:5000' -i 'localhost:1234' ping
     
 Example: report single service's state:
 
-    $ overclient -s 'http://localhost:5000' -i 'localhost:1234' service-status 60 'application' 'OK' 'Runs fine'
+    $ overcli -s 'http://localhost:5000' -i 'localhost:1234' service-status 60 'application' 'OK' 'Runs fine'
     
 Example: report a single alert:
 
-    $ overclient -s 'http://localhost:5000' -i 'localhost:1234' alert "Something bad has happened"
+    $ overcli -s 'http://localhost:5000' -i 'localhost:1234' alert "Something bad has happened"
     
     
     
@@ -156,5 +156,46 @@ Continuous Monitoring
 ---------------------
 
 The tools described above are just thin wrappers around the HTTP JSON client and are probably not enough for real
-monitoring challenges.
+monitoring challenges. Using `overcli`, you can set up continuous monitoring for your services using simple scripts.
 
+First, create the configuration file (anywhere):
+
+```ini
+[service:app]
+period=5
+command=./plugin.d/app.sh
+
+[service:que]
+period=10
+command=./plugin.d/que.sh
+
+[service:cpu]
+period=10
+command=./plugin.d/cpu.sh
+
+[service:echo]
+period=5
+command=echo 1
+```
+
+* Section `[service:<name>]` defines a service to be monitored and reported
+    
+    * `period` is the time period in seconds defining how often the service status should be reported
+    * `command` -- an arbitrary command that tests your service.
+        
+        The command should be a script which prints out the service info, and its return code defines the status:
+        
+        | Code | Status |
+        |------|--------|
+        | 0    | OK     |
+        | 1    | WARN   |
+        | 2    | FAIL   |
+        | >= 3 | UNK    |
+        
+        Any other code is also converted to `"UNK"`.
+
+Having this config file, just launch the monitor:
+
+    $ overcli -s 'http://localhost:5000' -i 'localhost:1234' monitor config.ini
+
+All service states will be updated immediately.
