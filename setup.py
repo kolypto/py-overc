@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 """ Simplistic monitoring solution that is a pleasure to use """
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     # http://pythonhosted.org/setuptools/setuptools.html
     name='overc',
-    version='1.0.0-3',
+    version='1.0.0-5',
     author='Mark Vartanyan',
     author_email='kolypto@gmail.com',
 
@@ -16,7 +16,7 @@ setup(
     long_description=open('README.md').read(),
     keywords=['monitoring'],
 
-    packages=['overc', 'overcli'],
+    packages=find_packages(),
     scripts=[],
     entry_points={
         'console_scripts': [
