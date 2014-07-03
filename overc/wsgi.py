@@ -20,6 +20,7 @@ app = OvercApplication(
     app_config['INSTANCE_PATH'],
     app_config
 )
+wsgi_app = app.app
 
 # Supervisor thread
 p = multiprocessing.Process(name='supervisor', target=supervise_loop, args=(app,))
@@ -33,11 +34,11 @@ if __name__ == '__main__':
     from werkzeug.wsgi import SharedDataMiddleware
     from werkzeug.serving import run_simple
 
-    app = SharedDataMiddleware(app.app, {
+    wsgi_app = SharedDataMiddleware(wsgi_app, {
         '/static/ui': ('overc.src.bps.ui', 'static')
     }, cache=False)
 
-    run_simple(application=app,
+    run_simple(application=wsgi_app,
                hostname='0.0.0.0',
                port=5000,
                use_reloader=True,
