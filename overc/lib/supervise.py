@@ -180,6 +180,8 @@ def supervise_loop(app):
     """
     while True:
         try:
+            # TODO: implement concurrency checking: if several instances are running -- they shouldn't issue duplicate alerts
+
             supervise_once(app)
             sleep(5)
         except Exception as e:

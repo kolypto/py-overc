@@ -165,6 +165,7 @@ class ServicesMonitor(object):
         :rtype: (int, dict)
         """
         # Determine which services to test
+        # TODO: use a smarter algorithm to detect which services to check
         max_lag = max(service.lag for service in self.services)
         now = datetime.utcnow()
         services = [ service
