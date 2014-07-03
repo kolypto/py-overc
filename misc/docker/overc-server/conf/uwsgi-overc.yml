@@ -1,0 +1,26 @@
+# All options can be given as arguments to uwsgi
+# Help: uwsgi --help
+
+uwsgi:
+  autoload: yes
+  #plugin: python
+
+  master: yes
+  workers: 1
+  threads: 2
+  no-orphans: yes
+  log-date: yes
+
+  uid: www-data
+  gid: www-data
+
+  chdir: /etc/overc/
+  module: overc.wsgi
+  callable: app
+  need-app: yes
+
+  logto: /var/log/uwsgi.log
+  socket: /tmp/overc.sock
+  chmod-socket: 666
+  #socket: :5000
+  #stats: 127.0.0.1:5001
