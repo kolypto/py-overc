@@ -95,6 +95,7 @@ def main():
     parser.add_argument('--verbose', '-v', action='count', default=0, help='Be more verbose. -vv includes debug output')
     parser.add_argument('-s', '--server', dest='server_url', help='OverC Server URL: "http://<host>:<port>/"')
     parser.add_argument('-i', '--server-id', dest='server_id', help='Server identification: "<name>:<key>"')
+    # TODO: for `monitor`, move server/server-id into the config file
 
     # Subcommands
     sub = parser.add_subparsers(dest='command_name', title='Command')
