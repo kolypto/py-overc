@@ -10,6 +10,7 @@ from overc.lib.db import models
 from overc.lib.alerts import AlertPlugin
 from overc.lib.supervise import supervise_once
 
+
 class ApiTest(ApplicationTest, unittest.TestCase):
     """ Test API: /api """
 
@@ -180,7 +181,7 @@ class ApiTest(ApplicationTest, unittest.TestCase):
             dict(id=4, service_id=1, reported=False, channel='api', event='alert', message=u'Service down again'),
         ])
 
-    def test_supervisor(self):
+    def test_supervisor(self): # TODO: use freezegun
         """ Test how alerts are created when the service state changes """
         # Prerequisites
         def overc_readlog():
