@@ -36,6 +36,8 @@ setup(
         'tests': ['freezegun >= 0.1.18']
     },
     include_package_data=True,
+    zip_safe=False,  # so we can access resources
+    test_suite='tests',
 
     platforms='any',
     classifiers=[
