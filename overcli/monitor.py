@@ -23,7 +23,10 @@ class Service(object):
         self.cwd = cwd
         self.command = command
 
+        #: Plugin execution time
         self.lag = 0
+
+        #: Timestamp when this service was tested last time
         self.last_tested = None
 
     def __str__(self):
@@ -109,33 +112,6 @@ class ServicesMonitor(object):
         """
         self.services = services
 
-        # Measure plugins performance
-        self._evaluate_service_lags()
-
-    def _evaluate_service_lags(self):
-        """ Measure lag for each service """
-        # Worker
-        def task(service):
-            # Start plugin
-            start = datetime.utcnow()
-            service.get_state()
-            finish = datetime.utcnow()
-
-            # Store the lag
-            delta = (finish-start).total_seconds()
-            service.lag = delta
-
-            # Ok?
-            if service.lag > service.period*0.5:
-                period_inc = service.lag * 2
-                logger.warning('Service `{}` execution lag is too high: {}s. Period increased by {}'.format(service.name, service.lag, period_inc))
-                service.period += period_inc
-
-        # Run
-        threads = [threading.Thread(target=task, args=(service,)) for service in self.services]
-        for t in threads: t.start()
-        for t in threads: t.join()
-
     def _check_services(self, services):
         """ Check services provided as an argument
         :param services: List of services to test
@@ -148,11 +124,20 @@ class ServicesMonitor(object):
         # Worker
         service_states = []
         def task(service):
-            # Add state
+            # Get state, measure lag
+            start = datetime.utcnow()
             state = service.get_state()
+            finish = datetime.utcnow()
+
+            # Update lag
+            service.lag = (finish - start).total_seconds()
+
+            # Add state
             service_states.append(state)
-            logger.debug(u'Check service {}: last checked {} ago, state={}: {}'.format(
+            logger.debug(u'Checked service {} (lag={}, real_period={}): last checked {} ago, state={}: {}'.format(
                 service.name,
+                service.lag,
+                service.real_period,
                 now - service.last_tested if service.last_tested else '(never)',
                 state['state'], state['info']
             ))

@@ -1,8 +1,10 @@
 import os
+from datetime import datetime
 import unittest
 from freezegun import freeze_time
 
 from overcli.monitor import Service, ServicesMonitor
+
 
 class MonitorTest(unittest.TestCase):
     """ Test overclient monitor """
@@ -25,11 +27,6 @@ class MonitorTest(unittest.TestCase):
             'echo': Service(15, 'echo', cwd, 'echo 1'),
         }
         monitor = ServicesMonitor(services.values())
-
-        # Make sure it has measured lags for services
-        for s in services.values():
-            self.assertGreater(s.lag, 0.0)
-            self.assertAlmostEqual(s.lag, 0.0, delta=0.5)  # should be very fast
 
         # Make sure it adjusted real periods
         self.assertAlmostEqual(services['app'].real_period, 15*0.8, delta=0.5)
@@ -96,3 +93,31 @@ class MonitorTest(unittest.TestCase):
 
             # Sleep time should be 15
             self.assertAlmostEqual(monitor.sleep_time(), 15.0 * 0.8, delta=0.5)
+
+    def test_monitor_lag(self):
+        """ Test monitoring of lagging tasks """
+        cwd = os.path.realpath('tests/data/overcli-config')
+
+        # Create the monitor
+        services = {
+            'lag1': Service(15, 'lag1', cwd, './plugin.d/lag.sh'),
+            'lag2': Service(15, 'lag2', cwd, './plugin.d/lag.sh'),
+            'lag3': Service(15, 'lag3', cwd, './plugin.d/lag.sh'),
+            'lag4': Service(15, 'lag4', cwd, './plugin.d/lag.sh'),
+        }
+        monitor = ServicesMonitor(services.values())
+
+        # Test all services, measure the time
+        start = datetime.utcnow()
+        period, service_states = monitor.check()
+        finish = datetime.utcnow()
+        finished_in = (finish - start).total_seconds()
+
+        # Each task lags ~3sec, but they should've been run in parallel
+        self.assertEqual(period, 15.0)
+        self.assertEqual(len(service_states), 4)
+        self.assertAlmostEqual(finished_in, 3.0, delta=1.0)
+
+        # Lags should've been updated
+        for s in services.values():
+            self.assertAlmostEqual(s.lag, 3.0, delta=1.0)
