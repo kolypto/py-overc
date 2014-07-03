@@ -88,16 +88,16 @@ def _check_service_timeouts(ssn):
             alert = models.Alert(
                 server=s.server,
                 service=s,
-                channel='service'
+                channel='plugin'
             )
             if s.timed_out:
                 alert.event = 'offline'
-                alert.message = u'Service offline: last seen {} ago'.format(
+                alert.message = u'Monitoring plugin offline'.format(
                     str(seen_ago).split('.')[0]
                 )
             else:
                 alert.event = 'online'
-                alert.message = u'Service back online'
+                alert.message = u'Monitoring plugin back online'
 
             ssn.add(alert)
             ssn.add(s)
@@ -181,6 +181,7 @@ def supervise_loop(app):
     while True:
         try:
             # TODO: implement concurrency checking: if several instances are running -- they shouldn't issue duplicate alerts
+            # TODO: receive notifications from the API for immediate supervision
 
             supervise_once(app)
             sleep(5)

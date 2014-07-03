@@ -55,14 +55,20 @@
          */
         $scope.n_alerts = 0;
 
+        /** Is the supervisor process running fine?
+         * @type {Boolean}
+         */
+        $scope.supervisor_lag = true;
+
         // Auto-update servers
         var updateServers = function(){
             api.serverStatus.get(function(res){
                 $scope.servers = res.servers;
                 $scope.n_alerts = res.n_alerts;
+                $scope.supervisor_lag = res.supervisor_lag;
             });
         };
-        setInterval(updateServers, 10000);
+        setInterval(updateServers, 5000);
         updateServers();
 
         // Auto-update alerts

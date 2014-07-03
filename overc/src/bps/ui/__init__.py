@@ -62,9 +62,18 @@ def api_status_server(server_id=None):
         elif server_id:
             server_alerts[server_id] += n
 
+    # Test whether there are any service states not checked, which probably means the supervisor thread is no running
+    last_checked = ssn.query(func.min(models.ServiceState.rtime)) \
+        .filter(
+            models.ServiceState.checked == False,
+        ) \
+        .scalar()
+    supervisor_lag = (datetime.utcnow() - last_checked).total_seconds() if last_checked else 0.0
+
     #     Format
     return {
         'n_alerts': total_alerts,  # alerts today (for all selected servers)
+        'supervisor_lag': supervisor_lag,  # Seconds ago the supervisor process last checked something
         'servers': sorted([
             {
                 'id': server.id,
