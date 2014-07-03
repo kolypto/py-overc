@@ -1,4 +1,4 @@
-import os.path
+import os
 from ConfigParser import ConfigParser
 
 from flask import Flask, Request
@@ -18,6 +18,8 @@ class OvercApplication(object):
     @staticmethod
     def loadConfigFile(filename):
         """ Load OverC config file and parse it
+        Any config option <name> can be overriden from environment: `OVERC_<name>`
+
         :param filename: Config file path
         :type filename: str
         :return: Configuration
@@ -33,7 +35,7 @@ class OvercApplication(object):
             PREFERRED_URL_SCHEME='http',
 
             INSTANCE_PATH='/',
-            DB_CONNECT='mysql://user:pass@127.0.0.1/overc',
+            DATABASE='mysql://user:pass@127.0.0.1/overc',
             ALERT_PLUGINS=[],
         )
 
@@ -47,7 +49,7 @@ class OvercApplication(object):
 
         # Parse: [overc]
         if ini.has_section('overc'):
-            app_config['DB_CONNECT'] = ini.get('overc', 'database')
+            app_config['DATABASE'] = ini.get('overc', 'database')
             app_config['LOGLEVEL'] = ini.get('overc', 'loglevel')
 
         # Parse: [alert:*]
@@ -60,6 +62,11 @@ class OvercApplication(object):
                         command=ini.get(s, 'command')
                     )
                 )
+
+        # Override from environment
+        for name, value in os.environ.items():
+            if name.startswith('OVERC_'):
+                app_config[name[len('OVERC_'):]] = value
 
         # Finish
         return app_config
@@ -84,7 +91,7 @@ class OvercApplication(object):
         self.app.debug = config.get('DEBUG', False)
 
         # Init DB
-        self.db_engine, self.db = init_sqlalchemy(self.app, self.app.config['DB_CONNECT'])
+        self.db_engine, self.db = init_sqlalchemy(self.app, self.app.config['DATABASE'])
 
         # Globals
         class DignioAppCtxGlobals(_AppCtxGlobals):
