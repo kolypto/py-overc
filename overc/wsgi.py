@@ -33,7 +33,7 @@ if __name__ == '__main__':
     from werkzeug.wsgi import SharedDataMiddleware
     from werkzeug.serving import run_simple
 
-    app = SharedDataMiddleware(app, {
+    app = SharedDataMiddleware(app.app, {
         '/static/ui': ('overc.src.bps.ui', 'static')
     }, cache=False)
 
