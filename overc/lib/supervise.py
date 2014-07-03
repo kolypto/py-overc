@@ -92,9 +92,7 @@ def _check_service_timeouts(ssn):
             )
             if s.timed_out:
                 alert.event = 'offline'
-                alert.message = u'Monitoring plugin offline'.format(
-                    str(seen_ago).split('.')[0]
-                )
+                alert.message = u'Monitoring plugin offline'
             else:
                 alert.event = 'online'
                 alert.message = u'Monitoring plugin back online'
@@ -108,14 +106,12 @@ def _check_service_timeouts(ssn):
     return new_alerts
 
 
-def _send_pending_alerts(ssn, alertd_path, alerts_config):
+def _send_pending_alerts(ssn, alert_plugins):
     """ Send pending alerts
     :param ssn: Database session
     :type ssn: sqlalchemy.orm.session.Session
-    :param alertd_path: Path to "alert.d" instance folder
-    :type alertd_path: str
-    :param alerts_config: Application config for alerts
-    :type alerts_config: dict
+    :param alert_plugins: Application config for alerts
+    :type alert_plugins: list[alerts.AlertPlugin]
     :returns: The number of alerts sent
     :rtype: int
     """
@@ -135,7 +131,7 @@ def _send_pending_alerts(ssn, alertd_path, alerts_config):
             alert_message += u"Current: {}: {}\n".format(s.state, s.info)
 
         # Potential exceptions are handled & logged down there
-        alerts.send_alert_to_subscribers(alertd_path, alerts_config, alert_message)
+        alerts.send_alert_with_plugins(alert_plugins, alert_message)
         a.reported = True
         ssn.add(a)
 
@@ -159,14 +155,12 @@ def supervise_once(app):
 
     # Prepare
     ssn = app.db
-    alertd_path = os.path.join(app.app.instance_path, 'alert.d')
-    alerts_config = app.app.config['ALERTS']
 
     # Act
     new_alerts, sent_alerts = 0, 0
     new_alerts += _check_service_states(ssn)
     new_alerts += _check_service_timeouts(ssn)
-    sent_alerts = _send_pending_alerts(ssn, alertd_path, alerts_config)
+    sent_alerts = _send_pending_alerts(ssn, app.app.config['ALERT_PLUGINS'])
 
     # Finish
     logger.debug('Supervise loop finished: {} new alerts, {} sent alerts'.format(new_alerts, sent_alerts))

@@ -43,9 +43,13 @@ class ApplicationTest(object):
     """ Mixin to initialize the app """
 
     def setUp(self):
+        # Load config
+        app_config_file = 'tests/data/overc-server/server.ini'
+        app_config = OvercApplication.loadConfigFile(app_config_file)
+
         # Init app
-        self.instance_path = os.path.realpath('./instance')
-        self.app = OvercApplication(__name__, self.instance_path)
+        self.instance_path = app_config['INSTANCE_PATH']
+        self.app = OvercApplication(__name__, self.instance_path, app_config)
         self.app.app.config.update(TESTING=True)
 
         # Customize

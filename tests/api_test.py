@@ -7,6 +7,7 @@ from datetime import datetime
 
 from . import ApplicationTest
 from overc.lib.db import models
+from overc.lib.alerts import AlertPlugin
 from overc.lib.supervise import supervise_once
 
 class ApiTest(ApplicationTest, unittest.TestCase):
@@ -182,12 +183,9 @@ class ApiTest(ApplicationTest, unittest.TestCase):
     def test_supervisor(self):
         """ Test how alerts are created when the service state changes """
         # Prerequisites
-        overc_log = '/tmp/overc.log'
-        self.app.app.config['ALERTS'] = { 'test': ('./log.sh', overc_log) }
-        self.app.app.instance_path = os.path.realpath('tests/data/overc-instance')
-
         def overc_readlog():
             """ Read overc.log and remove """
+            overc_log = '/tmp/overc.log'
             if not os.path.exists(overc_log):
                 return None
             try:
@@ -280,11 +278,11 @@ class ApiTest(ApplicationTest, unittest.TestCase):
         sleep(2)
 
         self.assertEqual(supervise_once(self.app), (1, 1))  # 1 alert
-        self.assertRegexpMatches(
+        self.assertMultiLineEqual(
             overc_readlog(),
             u'localhost a: '
-            ur'\[service/offline\] '
-            ur'Service offline: last seen 0:00:\d+ ago'
+            u'[plugin/offline] '
+            u'Monitoring plugin offline'
             '\n'
             u'Current: OK: hey6'
             '\n'
@@ -302,8 +300,8 @@ class ApiTest(ApplicationTest, unittest.TestCase):
         self.assertMultiLineEqual(
             overc_readlog(),
             u'localhost a: '
-            u'[service/online] '
-            u'Service back online'
+            u'[plugin/online] '
+            u'Monitoring plugin back online'
             '\n' +
             u'Current: OK: hey7'
             '\n'
@@ -340,10 +338,9 @@ class ApiTest(ApplicationTest, unittest.TestCase):
 
 
         # See how a failing script behaves
-        self.app.app.config['ALERTS'] = {
-            'fail': ('./error.sh',),
-            'test': ('./log.sh', overc_log),
-        }
+        self.app.app.config['ALERT_PLUGINS'].append(
+            AlertPlugin(name='error', cwd=self.app.app.instance_path, command='./alert.d/error.sh')
+        )
 
         self.send_alerts({'name': 'localhost', 'key': '1234'}, [
             dict(message='Server lags'),
@@ -357,15 +354,15 @@ class ApiTest(ApplicationTest, unittest.TestCase):
             u'[api/alert] '
             u'Server lags'
             '\n'
-            u'Alert plugin `fail` failed: Command \'./error.sh\' returned non-zero exit status 1'
+            u'Alert plugin `error` failed: Command \'./alert.d/error.sh\' returned non-zero exit status 1'
             '\n'
         )
 
         # See how a missing script behaves
-        self.app.app.config['ALERTS'] = {
-            'nonexistent': ('./nonexistent.sh',),
-            'test': ('./log.sh', overc_log),
-        }
+        self.app.app.config['ALERT_PLUGINS'].pop()
+        self.app.app.config['ALERT_PLUGINS'].append(
+            AlertPlugin(name='nonexistent', cwd=self.app.app.instance_path, command='./alert.d/nonexistent')
+        )
 
         self.send_alerts({'name': 'localhost', 'key': '1234'}, [
             dict(message='Server lags'),
