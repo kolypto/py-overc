@@ -1,8 +1,6 @@
 import logging
 from time import sleep
 
-from sqlalchemy.orm.session import sessionmaker
-
 from overc.src.init import init_db_engine, init_db_session
 from overc.lib.db import models
 from overc.lib import alerts
@@ -28,7 +26,6 @@ def _check_service_states(ssn):
     # Check them one by one
     new_alerts = 0
     for s in service_states:
-        alert = None
         logger.debug(u'Checking service {server}:`{service}` state #{id}: {state}'.format(id=s.id, server=s.service.server, service=s.service, state=s.state))
 
         # Report state changes and abnormal states
@@ -171,16 +168,19 @@ def supervise_loop(app):
     :type app: OvercApplication
     """
     db_engine = init_db_engine(app.app.config['DATABASE'])
-    db_session = init_db_session(db_engine)
+    Session = init_db_session(db_engine)
 
     while True:
-        try:
-            # TODO: implement concurrency checking: if several instances are running -- they shouldn't issue duplicate alerts
-            # TODO: receive notifications from the API for immediate supervision
+        ssn = Session()
 
-            supervise_once(app, db_session)
+        try:
+            # TODO: receive notifications from the API for immediate supervision
+            # Supervise
+            supervise_once(app, ssn)
             sleep(5)
         except Exception as e:
             logger.exception('Supervise loop error')
             # proceed: this loop is important and should never halt
             sleep(5)  # delay so error logs don't go too fast
+
+        Session.remove()

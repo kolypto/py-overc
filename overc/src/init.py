@@ -13,16 +13,16 @@ def init_db_session(engine):
     """ Init DB session
     :param engine: Engine
     :type engine: sqlalchemy.engine.Engine
-    :rtype: sqlalchemy.orm.session.Session
+    :rtype: sqlalchemy.orm.session.scoped_session
     """
-    ssn = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=engine))
+    Session = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=engine))
 
     # Models
     from overc.lib.db.models import Base
-    Base.query = ssn.query_property()
+    Base.query = Session.query_property()
     Base.metadata.create_all(bind=engine)  # TODO: remove automatic table creation
 
-    return ssn
+    return Session
 
 
 def init_db_session_for_flask(engine, app):
@@ -31,13 +31,13 @@ def init_db_session_for_flask(engine, app):
     :type engine: sqlalchemy.engine.Engine
     :param app: Flask application
     :type app: Flask
-    :rtype: sqlalchemy.orm.session.Session
+    :rtype: sqlalchemy.orm.session.scoped_session
     """
-    ssn = init_db_session(engine)
+    Session = init_db_session(engine)
 
     # Tear-down
     @app.teardown_appcontext
     def shutdown_session(exception=None):
-        ssn.remove()
+        Session.remove()
 
-    return ssn
+    return Session
