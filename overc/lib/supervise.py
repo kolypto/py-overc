@@ -183,3 +183,4 @@ def supervise_loop(app):
         except Exception as e:
             logger.exception('Supervise loop error')
             # proceed: this loop is important and should never halt
+            sleep(5)  # delay so error logs don't go too fast
