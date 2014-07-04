@@ -21,8 +21,8 @@ export OVERC_UI_AUTH=${OVERC_UI_AUTH:-""}
 j2 /root/conf/nginx-site.conf > /etc/nginx/sites-enabled/overc.conf
 
 # Passwords
-htpasswd -cbd /etc/nginx/htpasswd-api ${OVERC_API_AUTH/:/ }
-htpasswd -cbd /etc/nginx/htpasswd-ui ${OVERC_UI_AUTH/:/ }
+[ ! -z "$OVERC_API_AUTH" ] && htpasswd -cbd /etc/nginx/htpasswd-api ${OVERC_API_AUTH/:/ }
+[ ! -z "$OVERC_UI_AUTH" ]  && htpasswd -cbd /etc/nginx/htpasswd-ui  ${OVERC_UI_AUTH/:/ }
 
 # Logging
 rm -f /var/run/nginx.pid
