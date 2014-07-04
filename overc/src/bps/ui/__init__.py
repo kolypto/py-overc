@@ -141,4 +141,9 @@ def api_status_alerts(server_id=None, service_id=None):
         ]
     }
 
+# TODO: display app version in the UI
+# TODO: API to rename servers, services
+# TODO: API to remove servers, services
+# TODO: API to test alert plugins
+
 #endregion
