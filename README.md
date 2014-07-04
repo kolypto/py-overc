@@ -9,6 +9,8 @@ Features:
 * Dynamic and extensible: everything is a plugin, in any scripting language
 * Agent-less: data is pushed to OverC server
 
+<img src="misc/img/overc-server-ui.png" />
+
 
 
 
