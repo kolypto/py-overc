@@ -44,7 +44,7 @@ More details are given in [Server Configuration](#server-configuration).
 If you're lazy to set it up, there's a Docker container ready for you :)
 
     $ docker start overc-db || docker run --name="overc-db" -d -e MYSQL_ROOT_PASSWORD='root' -e MYSQL_DATABASE='overc' -e MYSQL_USER='overc' -e MYSQL_PASSWORD='overc' -e MYSQL_SET_KEYBUF=32M kolypto/mysql
-    $ docker start overc-server || docker run --name="overc-server" -d --link overc-db:db -e OVERC_DB_LINK=DB_PORT_3306 -p 5000:80 kolypto/overc-server
+    $ docker start overc-server || docker run --name="overc-server" -d --link overc-db:db -e OVERC_DB_LINK=DB_PORT_3306 -p 5000:80 -v /etc/overc:/etc/overc kolypto/overc-server
     
 Now you have a full-featured OverC server running on port `5000`!
 
@@ -268,6 +268,21 @@ Then use it like this:
 
     command=./plugin.d/pid-check.sh "httpd"
 
+#### Autorun Monitor
+Okay, we know how to launch the monitor, but we want it to run continuously.
+
+There are multiple ways to do so:
+
+* [Supervisor](http://supervisord.org/).
+
+  If you're already using this awesome process manager,
+  just put [this config file](misc/autorun/supervisor/conf.d/overcli-monitor.conf) in `/etc/supervisor/conf.d/`.
+
+* [upstart](http://upstart.ubuntu.com/).
+
+  With Ubuntu, you might like the [upstart script](misc/autorun/init/overcli-monitor.conf): just put it in `/etc/init/`.
+
+  It automatically lists all `/etc/overc/monitor*.ini` files and launch a separate monitoring for each file!
 
 
 
