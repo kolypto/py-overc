@@ -31,66 +31,22 @@ Receives information about running services through JSON API, and provides a use
 
     $ sudo install overc[server]
     
-OverC Server is a WSGI application, and requires a WSGI application server to run. More info:
+Then you deploy it as a WSGI application, using `overc.wsgi.app` as the entry point. 
+Please refer to [Server Intallation](#server-installation) manual.
 
-* [Flask: Starting your app with uwsgi]<http://flask.pocoo.org/docs/deploying/uwsgi/>
-* [uwsgi: Quickstart for Python/WSGI applications]<http://uwsgi-docs.readthedocs.org/en/latest/WSGIquickstart.html>
+OverC server uses configuration file in INI format. 
+More details are given in [Server Configuration](#server-configuration).
 
-### Ubuntu
+### Quickstart with Docker
 
-Quickstart guide for Ubuntu:
+If you're lazy to set it up, there's a Docker container ready for you :)
 
-    $ sudo apt-get install nginx-full uwsgi
-
-Put uwsgi application config in `/etc/uwsgi/apps-available/overc.yml`, and symlink it to `/etc/uwsgi/apps-enabled/overc.yml`:
+    $ docker start overc-db || docker run --name="overc-db" -d -e MYSQL_ROOT_PASSWORD='root' -e MYSQL_DATABASE='overc' -e MYSQL_USER='overc' -e MYSQL_PASSWORD='overc' -e MYSQL_SET_KEYBUF=32M kolypto/mysql
+    $ docker start overc-server || docker run --name="overc-server" -d --link overc-db:db -e OVERC_DB_LINK=DB_PORT_3306 -p 5000:80 kolypto/overc-server
     
-```yaml
-uwsgi:
-  autoload: yes
-  plugin: python
-  
-  uid: www-data
-  gid: www-data
-  
-  chdir: /etc/overc/
-  module: overc.wsgi
-  callable: app
-```
+Now you have a full-featured OverC server running on port `5000`!
 
-Then, configure nginx to `/etc/nginx/sites-available/overc.conf`, and symlink it to `/etc/nginx/sites-enabled/overc.conf`:
-
-```
-upstream overc {
-    server unix:///var/run/uwsgi/app/overc/socket;
-}
-
-server {
-    listen 80;
-    server_name localhost;
-
-    root /var/www;
-
-    access_log /var/log/nginx/overc.access.log combined;
-    error_log  /var/log/nginx/overc.error.log;
-
-    # Statics
-    location /ui/static {
-        alias /usr/local/lib/python2.7/dist-packages/overc/src/bps/ui/static;
-    }
-
-    location / {
-        include uwsgi_params;
-        uwsgi_pass overc;
-    }
-}
-```
-
-And restart services:
-
-    $ sudo service nginx restart
-    $ sudo service uwsgi restart
-
-
+Container description is available in [misc/docker/overc-server](misc/docker/overc-server).
 
 
 
@@ -300,4 +256,88 @@ Then use it like this:
 
     command=./plugin.d/pid-check.sh "httpd"
 
+
+
+
+
+
+OverC Server
+============
+
+Server Installation
+-------------------
+
+OverC Server is a WSGI application, and requires a WSGI application server to run. More info:
+
+* [Flask: Starting your app with uwsgi](http://flask.pocoo.org/docs/deploying/uwsgi/)
+* [uwsgi: Quickstart for Python/WSGI applications](http://uwsgi-docs.readthedocs.org/en/latest/WSGIquickstart.html)
+
+It requires a MySQL database, make sure you set it up. You don't need to crate any tables: OverC does this for you.
+
+Finally, OverC uses a configuration file in INI format: see [Server Configuration](#server-configuration)
+
+### Ubuntu
+
+Quickstart guide for Ubuntu:
+
+    $ sudo apt-get install nginx-full uwsgi
+
+Put uwsgi application config in `/etc/uwsgi/apps-available/overc.yml`, and symlink it to `/etc/uwsgi/apps-enabled/overc.yml`:
+    
+```yaml
+uwsgi:
+  autoload: yes
+  plugin: python
+  
+  uid: www-data
+  gid: www-data
+  
+  chdir: /etc/overc/
+  module: overc.wsgi
+  callable: app
+```
+
+Then, configure nginx to `/etc/nginx/sites-available/overc.conf`, and symlink it to `/etc/nginx/sites-enabled/overc.conf`:
+
+```
+upstream overc {
+    server unix:///var/run/uwsgi/app/overc/socket;
+}
+
+server {
+    listen 80;
+    server_name localhost;
+
+    root /var/www;
+
+    access_log /var/log/nginx/overc.access.log combined;
+    error_log  /var/log/nginx/overc.error.log;
+
+    # Statics
+    location /ui/static {
+        alias /usr/local/lib/python2.7/dist-packages/overc/src/bps/ui/static;
+    }
+
+    location / {
+        include uwsgi_params;
+        uwsgi_pass overc;
+    }
+}
+```
+
+And restart services:
+
+    $ sudo service nginx restart
+    $ sudo service uwsgi restart
+
+OverC requires a MySQL database to run, so make sure you set it up as well:
+
+    $ sudo apt-get install mysql-server mysql-client
+    $ echo "CREATE DATABASE IF NOT EXISTS \`overc\` CHARACTER SET utf8 COLLATE utf8_general_ci;" | mysql
+    $ echo "GRANT ALL ON \`overc\`.* to 'overc'@'%' IDENTIFIED BY 'overc';" | mysql
+
+
+
+Server Configuration
+--------------------
 
