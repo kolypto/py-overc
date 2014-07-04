@@ -22,8 +22,8 @@ Variables
 * `OVERC_DB_HOST=localhost`: MySQL host to connect to
 * `OVERC_DB_PORT=3306`: MySQL port
 
-* `OVERC_API_AUTH=`: API authentication: "username:password". Optional. (NOT YET IMPLEMENTED)
-* `OVERC_UI_AUTH=`: UI authentication: "username:password". Optional. (NOT YET IMPLEMENTED)
+* `OVERC_API_AUTH=`: API authentication: "username:password". Optional.
+* `OVERC_UI_AUTH=`: UI authentication: "username:password". Optional.
 
 Linking:
 

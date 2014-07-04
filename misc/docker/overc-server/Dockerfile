@@ -7,7 +7,7 @@ ENV DEBCONF_FRONTEND noninteractive
 RUN apt-get update -qq
 RUN apt-get install -qq -y --no-install-recommends python-pip python-dev build-essential supervisor
 RUN apt-get install -qq -y --no-install-recommends libmysqlclient-dev libpcre3 libpcre3-dev
-RUN apt-get install -qq -y --no-install-recommends nginx-full
+RUN apt-get install -qq -y --no-install-recommends nginx-full apache2-utils
 RUN pip install uwsgi j2cli
 
 
