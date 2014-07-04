@@ -1,4 +1,4 @@
-import json, urlparse, urllib2
+import json, urlparse, urllib2, base64
 
 class Overclient(object):
     """ OverC API client """
@@ -12,7 +12,18 @@ class Overclient(object):
         :param server_key: Server identification: key
         :type server_key: str
         """
+        # Parse URL
+        headers = {}
+        p = urlparse.urlsplit(url, 'http')
+        if p.username and p.password:
+            # Prepare header
+            headers['Authorization'] = b'Basic ' + base64.b64encode(p.username + b':' + p.password)
+            # Remove authentication info since urllib2.Request() does not understand it
+            url = urlparse.urlunsplit((p.scheme, p.netloc.split('@',1)[1], p.path, p.query, p.fragment))
+
+        # Put
         self._url = url
+        self._headers = headers
         self._server_id = {'name': server_name, 'key': server_key}
 
     def _jsonpost(self, path, data=None):
@@ -30,6 +41,8 @@ class Overclient(object):
         req = urllib2.Request(url)
         if data:
             req.add_header('Content-Type', 'application/json')
+        for name, value in self._headers.items():
+            req.add_header(name, value)
 
         # Request
         response = urllib2.urlopen(req, json.dumps(data) if data else None)

@@ -6,7 +6,7 @@ from setuptools import setup, find_packages
 setup(
     # http://pythonhosted.org/setuptools/setuptools.html
     name='overc',
-    version='1.0.1-2',
+    version='1.0.2-0',
     author='Mark Vartanyan',
     author_email='kolypto@gmail.com',
 
