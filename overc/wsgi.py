@@ -32,21 +32,24 @@ def init_application(app_config_file):
     # Finish
     return application
 
+# Application
 application = init_application(
     os.environ.get('OVERC_CONFIG', 'server.ini')
 )
-app = application.app  # WSGI entry point
+
+# WSGI entry point
+app = application.app
+
+# Serve static files
+from werkzeug.wsgi import SharedDataMiddleware
+
+app = SharedDataMiddleware(app, {
+    '/ui/static/': ('overc.src.bps.ui', 'static')
+}, cache=False)
 
 # Debug mode
 if __name__ == '__main__':
-    # Serve static files in debug mode
-    from werkzeug.wsgi import SharedDataMiddleware
     from werkzeug.serving import run_simple
-
-    app = SharedDataMiddleware(app, {
-        '/static/ui': ('overc.src.bps.ui', 'static')
-    }, cache=False)
-
     run_simple(application=app,
                hostname='0.0.0.0',
                port=5000,
