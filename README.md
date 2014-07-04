@@ -9,11 +9,97 @@ Features:
 * Dynamic and extensible: everything is a plugin, in any scripting language
 * Agent-less: data is pushed to OverC server
 
+
+
+
+
+
 Installation
 ============
 
+Overclient
+----------
+
+This tiny app with no dependencies is used to push information to OverC server:
+
+    $ sudo pip install overc
+    
+OverC Server
+------------
+
+Receives information about running services through JSON API, and provides a user interface:
+
+    $ sudo install overc[server]
+    
+OverC Server is a WSGI application, and requires a WSGI application server to run. More info:
+
+* [Flask: Starting your app with uwsgi]<http://flask.pocoo.org/docs/deploying/uwsgi/>
+* [uwsgi: Quickstart for Python/WSGI applications]<http://uwsgi-docs.readthedocs.org/en/latest/WSGIquickstart.html>
+
+### Ubuntu
+
+Quickstart guide for Ubuntu:
+
+    $ sudo apt-get install nginx-full uwsgi
+
+Put uwsgi application config in `/etc/uwsgi/apps-available/overc.yml`, and symlink it to `/etc/uwsgi/apps-enabled/overc.yml`:
+    
+```yaml
+uwsgi:
+  autoload: yes
+  plugin: python
+  
+  uid: www-data
+  gid: www-data
+  
+  chdir: /etc/overc/
+  module: overc.wsgi
+  callable: app
+```
+
+Then, configure nginx to `/etc/nginx/sites-available/overc.conf`, and symlink it to `/etc/nginx/sites-enabled/overc.conf`:
+
+```
+upstream overc {
+    server unix:///var/run/uwsgi/app/overc/socket;
+}
+
+server {
+    listen 80;
+    server_name localhost;
+
+    root /var/www;
+
+    access_log /var/log/nginx/overc.access.log combined;
+    error_log  /var/log/nginx/overc.error.log;
+
+    # Statics
+    location /ui/static {
+        alias /usr/local/lib/python2.7/dist-packages/overc/src/bps/ui/static;
+    }
+
+    location / {
+        include uwsgi_params;
+        uwsgi_pass overc;
+    }
+}
+```
+
+And restart services:
+
+    $ sudo service nginx restart
+    $ sudo service uwsgi restart
+
+
+
+
+
+
 Sending Data
 ============
+
+JSON Protocol
+-------------
 
 OverC uses an extremely simple JSON protocol to report arbitrary monitoring data.
 You can use the API as you like, but there also is a [command-line overcli tool](#overcli) available
@@ -27,8 +113,7 @@ In response, you get one of the following HTTP codes:
 * `400`: malformed request (e.g. not enough data provided)
 * `403`: authentication failed (e.g. wrong server key)
 
-Ping
-----
+### Ping
 
 Checks whether the connection works fine:
 
@@ -41,8 +126,7 @@ Checks whether the connection works fine:
 In addition to connection-checking, it also tests server authentication.
 Proceed to the next section for more information.
 
-Reporting Services
-------------------
+### Reporting Services
 
 OverC does not connect to anything: all data should be POSTed to it as JSON to `/api/set/service/status`:
 
@@ -91,10 +175,7 @@ Keys explained:
 
 Note that there's no need to explicitly define Servers and Services: all data is accepted automatically.
 
-
-
-Reporting Alerts
-----------------
+### Reporting Alerts
 
 It's possible to send alerts directly by pushing JSON object to `/api/set/alerts`:
 
@@ -121,11 +202,10 @@ Keys explained:
 
 
 
-
-
-
 Overcli
-=======
+-------
+
+### Simple Commands
 
 OverC comes with a command-line client utility which allows to interact with OverC server.
 
@@ -151,11 +231,8 @@ Example: report single service's state:
 Example: report a single alert:
 
     $ overcli -s 'http://localhost:5000' -i 'localhost:1234' alert "Something bad has happened"
-    
-    
-    
-Continuous Monitoring
----------------------
+
+### Continuous Monitoring
 
 The tools described above are just thin wrappers around the HTTP JSON client and are probably not enough for real
 monitoring challenges. Using `overcli`, you can set up continuous monitoring for your services using simple scripts.
@@ -222,3 +299,5 @@ exit 0
 Then use it like this:
 
     command=./plugin.d/pid-check.sh "httpd"
+
+
