@@ -197,7 +197,7 @@ class ApiTest(ApplicationTest, unittest.TestCase):
         overc_readlog()
 
         # Dry run first
-        self.assertEqual(supervise_once(self.app), (0, 0))
+        self.assertEqual(supervise_once(self.app, self.db), (0, 0))
         self.assertIsNone(overc_readlog())
 
         # Test a: OK
@@ -206,7 +206,7 @@ class ApiTest(ApplicationTest, unittest.TestCase):
             {'name': 'a', 'state': 'OK', 'info': 'hey1'},
         ])
         self.assertEqual(res['ok'], 1)
-        self.assertEqual(supervise_once(self.app), (0, 0))
+        self.assertEqual(supervise_once(self.app, self.db), (0, 0))
         self.assertIsNone(overc_readlog())
 
         # Test b: UNK
@@ -216,7 +216,7 @@ class ApiTest(ApplicationTest, unittest.TestCase):
             {'name': 'b', 'state': 'BULLSHIT', 'info': 'hey2'},
         ])
         self.assertEqual(res['ok'], 1)
-        self.assertEqual(supervise_once(self.app), (1, 1)) # 1 alert
+        self.assertEqual(supervise_once(self.app, self.db), (1, 1)) # 1 alert
         self.assertMultiLineEqual(
             overc_readlog(),
             u'localhost b: '
@@ -233,7 +233,7 @@ class ApiTest(ApplicationTest, unittest.TestCase):
             {'name': 'a', 'state': 'WARN', 'info': 'hey3'},
         ])
         self.assertEqual(res['ok'], 1)
-        self.assertEqual(supervise_once(self.app), (1, 1)) # 1 alert
+        self.assertEqual(supervise_once(self.app, self.db), (1, 1)) # 1 alert
         self.assertMultiLineEqual(
             overc_readlog(),
             u'localhost a: '
@@ -250,7 +250,7 @@ class ApiTest(ApplicationTest, unittest.TestCase):
             {'name': 'a', 'state': 'WARN', 'info': 'hey4'},
         ])
         self.assertEqual(res['ok'], 1)
-        self.assertEqual(supervise_once(self.app), (0, 0))  # no alerts
+        self.assertEqual(supervise_once(self.app, self.db), (0, 0))  # no alerts
 
         # Test a: WARN -> OK
         # State change should be reported
@@ -258,7 +258,7 @@ class ApiTest(ApplicationTest, unittest.TestCase):
             {'name': 'a', 'state': 'OK', 'info': 'hey5'},
         ])
         self.assertEqual(res['ok'], 1)
-        self.assertEqual(supervise_once(self.app), (1, 1))  # 1 alert
+        self.assertEqual(supervise_once(self.app, self.db), (1, 1))  # 1 alert
         self.assertMultiLineEqual(
             overc_readlog(),
             u'localhost a: '
@@ -274,11 +274,11 @@ class ApiTest(ApplicationTest, unittest.TestCase):
             {'name': 'a', 'state': 'OK', 'info': 'hey6'},
         ], period=1)
         self.assertEqual(res['ok'], 1)
-        self.assertEqual(supervise_once(self.app), (0, 0))  # all ok
+        self.assertEqual(supervise_once(self.app, self.db), (0, 0))  # all ok
 
         sleep(2)
 
-        self.assertEqual(supervise_once(self.app), (1, 1))  # 1 alert
+        self.assertEqual(supervise_once(self.app, self.db), (1, 1))  # 1 alert
         self.assertMultiLineEqual(
             overc_readlog(),
             u'localhost a: '
@@ -290,14 +290,14 @@ class ApiTest(ApplicationTest, unittest.TestCase):
         )
 
         # Still offline, it should not report again
-        self.assertEqual(supervise_once(self.app), (0, 0))  # no alerts
+        self.assertEqual(supervise_once(self.app, self.db), (0, 0))  # no alerts
 
         # Test a: OK back again
         res, rv = self.send_service_status({'name': 'localhost', 'key': '1234'}, [
             {'name': 'a', 'state': 'OK', 'info': 'hey7'},
         ], period=60)
         self.assertEqual(res['ok'], 1)
-        self.assertEqual(supervise_once(self.app), (1, 1))  # 1 alert
+        self.assertEqual(supervise_once(self.app, self.db), (1, 1))  # 1 alert
         self.assertMultiLineEqual(
             overc_readlog(),
             u'localhost a: '
@@ -309,7 +309,7 @@ class ApiTest(ApplicationTest, unittest.TestCase):
         )
 
         # Still online, it should not report again
-        self.assertEqual(supervise_once(self.app), (0, 0))  # no alerts
+        self.assertEqual(supervise_once(self.app, self.db), (0, 0))  # no alerts
 
 
 
@@ -319,7 +319,7 @@ class ApiTest(ApplicationTest, unittest.TestCase):
             dict(message='Service down again', service='test'),
         ])
         self.assertEqual(res['ok'], 1)
-        self.assertEqual(supervise_once(self.app), (0, 2))  # 2 alerts
+        self.assertEqual(supervise_once(self.app, self.db), (0, 2))  # 2 alerts
 
         self.assertMultiLineEqual(
             overc_readlog(),
@@ -334,7 +334,7 @@ class ApiTest(ApplicationTest, unittest.TestCase):
         )
 
         # Should not report again
-        self.assertEqual(supervise_once(self.app), (0, 0))  # no alerts
+        self.assertEqual(supervise_once(self.app, self.db), (0, 0))  # no alerts
 
 
 
@@ -347,7 +347,7 @@ class ApiTest(ApplicationTest, unittest.TestCase):
             dict(message='Server lags'),
         ])
         self.assertEqual(res['ok'], 1)
-        self.assertEqual(supervise_once(self.app), (0, 1))  # 1 alert, but 1 additional fatal
+        self.assertEqual(supervise_once(self.app, self.db), (0, 1))  # 1 alert, but 1 additional fatal
 
         self.assertMultiLineEqual(
             overc_readlog(),
@@ -369,7 +369,7 @@ class ApiTest(ApplicationTest, unittest.TestCase):
             dict(message='Server lags'),
         ])
         self.assertEqual(res['ok'], 1)
-        self.assertEqual(supervise_once(self.app), (0, 1))  # 1 alert, but 1 additional fatal
+        self.assertEqual(supervise_once(self.app, self.db), (0, 1))  # 1 alert, but 1 additional fatal
 
         self.assertMultiLineEqual(
             overc_readlog(),

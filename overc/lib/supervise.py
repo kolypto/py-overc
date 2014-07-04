@@ -1,8 +1,9 @@
 import logging
 from time import sleep
 
-from sqlalchemy.orm.session import Session
+from sqlalchemy.orm.session import sessionmaker
 
+from overc.src.init import init_db_engine, init_db_session
 from overc.lib.db import models
 from overc.lib import alerts
 
@@ -141,7 +142,7 @@ def _send_pending_alerts(ssn, alert_plugins):
     return len(pending_alerts)
 
 
-def supervise_once(app):
+def supervise_once(app, ssn):
     """ Perform all background actions once:
 
     * Check service states
@@ -153,10 +154,6 @@ def supervise_once(app):
     :returns: (New alerts created, Alerts sent)
     :rtype: (int, int)
     """
-
-    # Prepare
-    ssn = Session(bind=app.db_engine)  # new session required
-
     # Act
     new_alerts, sent_alerts = 0, 0
     new_alerts += _check_service_states(ssn)
@@ -173,12 +170,15 @@ def supervise_loop(app):
     :param app: Application
     :type app: OvercApplication
     """
+    db_engine = init_db_engine(app.app.config['DATABASE'])
+    db_session = init_db_session(db_engine)
+
     while True:
         try:
             # TODO: implement concurrency checking: if several instances are running -- they shouldn't issue duplicate alerts
             # TODO: receive notifications from the API for immediate supervision
 
-            supervise_once(app)
+            supervise_once(app, db_session)
             sleep(5)
         except Exception as e:
             logger.exception('Supervise loop error')

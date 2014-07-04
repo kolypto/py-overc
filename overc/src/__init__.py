@@ -5,7 +5,7 @@ from flask import Flask, Request
 from flask.ctx import _AppCtxGlobals
 
 from overc import __version__
-from overc.src.init import init_sqlalchemy
+from overc.src.init import init_db_engine, init_db_session_for_flask
 from overc.lib.alerts import AlertPlugin
 
 class OvercFlask(Flask):
@@ -91,7 +91,8 @@ class OvercApplication(object):
         self.app.debug = config.get('DEBUG', False)
 
         # Init DB
-        self.db_engine, self.db = init_sqlalchemy(self.app, self.app.config['DATABASE'])
+        self.db_engine = init_db_engine(self.app.config['DATABASE'])
+        self.db = init_db_session_for_flask(self.db_engine, self.app)
 
         # Globals
         class DignioAppCtxGlobals(_AppCtxGlobals):
