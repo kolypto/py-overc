@@ -30,32 +30,34 @@ def cmd_alert(args, overc):
         alert['service'] = args.service
     overc.set_alerts([ alert ])
 
-def cmd_monitor(args, overc):
-    try:
-        _cmd_monitor_wrapped(args, overc)
-    except Exception as e:
-        overc.set_alerts([
-            u'Monitoring failure: {}: {}'.format(e.name, e.message)
-        ])
-        raise
 
-def _cmd_monitor_wrapped(args, overc):
-    """ Perform continuous monitoring """
+def cmd_monitor(args, overc):
+    # Config file exists?
     cwd = os.path.dirname(args.config)
     if not os.path.exists(args.config):
         raise OSError('Config file does not exist: {}'.format(args.config))
-
-    # First, ping the server
-    overc.ping()  # exception when fails
 
     # Read config file
     services = []
     ini = ConfigParser()
     ini.read(args.config)
 
+    # Overclient
+    if not overc:
+        overc = Overclient(
+            ini.get('overc', 'server'),
+            ini.get('overc', 'my-name'),
+            ini.get('overc', 'my-key')
+        )
+
     # Parse config file
     for section in ini.sections():
-        type, name = section.split(':')
+        # Parse [A:B] sections only
+        type, name = (section.split(':', 1) + [None, None])[:2]
+        if name is None:
+            continue
+
+        # Service definitions
         if section.startswith('service:'):
             services.append(Service(
                 ini.getint(section, 'period'),
@@ -65,6 +67,20 @@ def _cmd_monitor_wrapped(args, overc):
             ))
         else:
             raise ValueError('Unknown section type: "{}"'.format(type))
+
+    # Continuous Monitoring
+    try:
+        _cmd_monitor_daemon(services, overc)
+    except Exception as e:
+        overc.set_alerts([
+            u'Monitoring failure: {}: {}'.format(e.__class__.__name__, e.message)
+        ])
+        raise
+
+def _cmd_monitor_daemon(services, overc):
+    """ Perform continuous monitoring """
+    # First, ping the server
+    overc.ping()  # exception when fails
 
     # Init monitor
     monitor = ServicesMonitor(services)
@@ -95,7 +111,6 @@ def main():
     parser.add_argument('--verbose', '-v', action='count', default=0, help='Be more verbose. -vv includes debug output')
     parser.add_argument('-s', '--server', dest='server_url', help='OverC Server URL: "http://<host>:<port>/"')
     parser.add_argument('-i', '--server-id', dest='server_id', help='Server identification: "<name>:<key>"')
-    # TODO: for `monitor`, move server/server-id into the config file
 
     # Subcommands
     sub = parser.add_subparsers(dest='command_name', title='Command')
@@ -125,9 +140,14 @@ def main():
     # Configure logging
     logging.basicConfig(level=[logging.WARN, logging.INFO, logging.DEBUG, logging.NOTSET][args.verbose])
 
-    # Server
-    args.server_id = args.server_id.split(':', 1)
-    overc = Overclient(args.server_url, *args.server_id)
+    # Overclient
+    if args.command_name == 'monitor':
+       overc = None  # Created from the config file
+    elif not args.server_url or args.server_id:
+        raise RuntimeError('--server and --server-id should be specified')
+    else:
+        args.server_id = args.server_id.split(':', 1)
+        overc = Overclient(args.server_url, *args.server_id)
 
     # Command
     args.func(args, overc)

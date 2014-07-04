@@ -169,7 +169,7 @@ OverC comes with a command-line client utility which allows to interact with Ove
 
 Two main arguments are:
 
-* `-s`, `--server`: OverC server URL. Example: `http://localhost:5000/`
+* `-s`, `--server`: OverC Server URL. Example: `http://localhost:5000/`
 * `-i`, `--server-id`: Server identification, `<server-name>:<server-key>`. Example: 'localhost:1234'.
     
       Identification pair is arbitrary, just keep using the same key.
@@ -198,6 +198,11 @@ monitoring challenges. Using `overcli`, you can set up continuous monitoring for
 First, create the configuration file (anywhere):
 
 ```ini
+[overc]
+server=http://user:password@mon.example.com:5000/
+my-name=a.example.com
+my-key=1234
+
 [service:app]
 period=5
 command=./plugin.d/app.sh
@@ -214,6 +219,11 @@ command=./plugin.d/cpu.sh
 period=5
 command=echo 1
 ```
+
+* Section `[overc]` specifies generic settings:
+
+    * `server`: URL to OverC Server
+    * `my-name`, `my-key`: This server identification, name and key.
 
 * Section `[service:<name>]` defines a service to be monitored and reported
     
