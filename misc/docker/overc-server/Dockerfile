@@ -12,7 +12,7 @@ RUN pip install uwsgi j2cli
 
 
 # Install OverC server
-RUN pip install   overc[server]
+RUN pip install overc[server]
 
 # Put files
 ADD conf /root/conf

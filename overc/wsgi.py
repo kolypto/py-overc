@@ -16,6 +16,7 @@ def init_application(app_config_file):
 
     # Configure logging
     logging.basicConfig(level=getattr(logging, app_config['LOGLEVEL']))
+    # TODO: multi-process app does not log everything fine! make it log to stdout, always
 
     # Applicaton
     application = OvercApplication(
