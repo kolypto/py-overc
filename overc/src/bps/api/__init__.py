@@ -131,10 +131,9 @@ def set_service_status():
         isinstance(s, dict) and
         'name' in s and isinstance(s['name'], basestring) and
         'state' in s and isinstance(s['state'], basestring) and
-        ('info' not in s or isinstance(s['info'], basestring)) and
-        set(s.keys()) <= {'name', 'state', 'info'}
+        ('info' not in s or isinstance(s['info'], basestring))
         for s in data['services']
-    ), 'Data: "services" should be a list of objects with keys "name", "state", "info"'
+    ), 'Data: "services" should be a list of objects with keys "name", "state", "info"?, "period"?'
 
     # Identify server
     server = _identify_server(ssn, data['server'])
@@ -149,8 +148,15 @@ def set_service_status():
         except KeyError:
             service = _identify_service(ssn, server, s['name'])
             services_cache[service.name] = service
-            service.period = data['period']
-            ssn.add(service)
+        ssn.add(service)
+
+        # Update period
+        try:
+            service_period = int(s['period'])
+        except (KeyError, ValueError):
+            service_period = data['period']
+
+        service.period = service_period
 
         # State
         if not models.state_t.is_valid(s['state']):

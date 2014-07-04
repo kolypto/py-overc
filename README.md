@@ -87,6 +87,8 @@ Keys explained:
     
     Any additional information can be reported with `"info"`: arbitrary string with runtime data.
 
+    Finally, a different period can be specified per service using the `"period"` key.
+
 Note that there's no need to explicitly define Servers and Services: all data is accepted automatically.
 
 

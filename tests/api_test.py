@@ -143,7 +143,7 @@ class ApiTest(ApplicationTest, unittest.TestCase):
         # Finally, try to report a single service multiple times and make sure it does not make duplicates
         res, rv = self.send_service_status({'name': 'localhost', 'key': '1234'}, [
             dict(name='test', state='OK', info='1'),
-            dict(name='test', state='OK', info='2'),
+            dict(name='test', state='OK', info='2', period=13),
         ])
         self.assertEqual(rv.status_code, 200)
 
@@ -153,7 +153,7 @@ class ApiTest(ApplicationTest, unittest.TestCase):
             dict(id=2, period=60, name='cpu', title=u'cpu', state=dict(id=5, checked=False, state='OK', info='30% ok')),
             dict(id=3, period=60, name='que', title=u'que', state=dict(id=6, checked=False, state='OK', info='3 ok')),
             dict(id=4, period=60, name='moo', title=u'moo', state=dict(id=7, checked=False, state='OK', info=':)')),
-            dict(id=5, period=60, name='test', title=u'test', state=dict(id=9, checked=False, state='OK', info='2')),
+            dict(id=5, period=13, name='test', title=u'test', state=dict(id=9, checked=False, state='OK', info='2')),
         ])
 
     def test_alerts(self):

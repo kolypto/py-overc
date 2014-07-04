@@ -79,7 +79,8 @@ class Service(object):
             return {
                 'name': self.name,
                 'state': 'UNK',
-                'info': error_msg
+                'info': error_msg,
+                'period': self.period
             }
 
         # Analyze the result
