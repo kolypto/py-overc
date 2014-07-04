@@ -26,8 +26,6 @@ class Overclient(object):
         self._headers = headers
         self._server_id = {'name': server_name, 'key': server_key}
 
-        print self._url, self._headers, self._server_id
-
     def _jsonpost(self, path, data=None):
         """ Execute an API method
         :param path: Method URI

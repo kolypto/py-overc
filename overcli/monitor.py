@@ -74,7 +74,7 @@ class Service(object):
             )
             process.wait()
         except OSError, e:
-            error_msg = u'Failed to execute plugin `{}`: {}'.format(self.name, e.message)
+            error_msg = u'Failed to execute plugin `{}` by command `{}`: {}'.format(self.name, self.command, e.message)
             logger.exception(error_msg)
             return {
                 'name': self.name,

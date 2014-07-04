@@ -32,15 +32,17 @@ def cmd_alert(args, overc):
 
 
 def cmd_monitor(args, overc):
+    config_file = os.path.realpath(args.config)
+
     # Config file exists?
-    cwd = os.path.dirname(args.config)
-    if not os.path.exists(args.config):
-        raise OSError('Config file does not exist: {}'.format(args.config))
+    cwd = os.path.dirname(config_file)
+    if not os.path.exists(config_file):
+        raise OSError('Config file does not exist: {}'.format(config_file))
 
     # Read config file
     services = []
     ini = ConfigParser()
-    ini.read(args.config)
+    ini.read(config_file)
 
     # Overclient
     if not overc:
