@@ -1,5 +1,6 @@
 import logging
 from time import sleep
+import os, tempfile
 
 from overc.src.init import init_db_engine, init_db_session
 from overc.lib.db import models
@@ -162,6 +163,34 @@ def supervise_once(app, ssn):
     return new_alerts, sent_alerts
 
 
+
+
+
+import signal, errno
+from contextlib import contextmanager
+import fcntl
+
+@contextmanager
+def flock_timeout(filename, seconds): # TODO: if this works, move to lib/
+    original_handler = signal.signal(signal.SIGALRM, lambda signum, frame: None)
+    try:
+        signal.alarm(seconds)
+        with open(filename, 'w') as f:
+            try:
+                fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+                yield
+            except IOError as e:
+                if e.errno != errno.EINTR:
+                    raise e  # Some problem
+                else:
+                    yield # TODO: Lock timed out. Throw a special exception!
+            finally:
+                fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+    finally:
+        signal.alarm(0)
+        signal.signal(signal.SIGALRM, original_handler)
+
+
 def supervise_loop(app):
     """ Supervisor main loop which performs background actions
     :param app: Application
@@ -170,17 +199,19 @@ def supervise_loop(app):
     db_engine = init_db_engine(app.app.config['DATABASE'])
     Session = init_db_session(db_engine)
 
+    lockfile = os.path.join(tempfile.gettempdir(), 'overc.lock')
+
     while True:
-        ssn = Session()
+        sleep(3)
 
-        try:
-            # TODO: receive notifications from the API for immediate supervision
+        # Locking
+        with flock_timeout(lockfile, seconds=2):
             # Supervise
-            supervise_once(app, ssn)
-            sleep(5)
-        except Exception as e:
-            logger.exception('Supervise loop error')
-            # proceed: this loop is important and should never halt
-            sleep(5)  # delay so error logs don't go too fast
-
-        Session.remove()
+            ssn = Session()
+            try:
+                # TODO: receive notifications from the API for immediate supervision
+                supervise_once(app, ssn)
+            except Exception:
+                logger.exception('Supervise loop error')
+            finally:
+                Session.remove()
