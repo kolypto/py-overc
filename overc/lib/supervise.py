@@ -1,6 +1,7 @@
-import os
 import logging
 from time import sleep
+
+from sqlalchemy.orm.session import Session
 
 from overc.lib.db import models
 from overc.lib import alerts
@@ -154,7 +155,7 @@ def supervise_once(app):
     """
 
     # Prepare
-    ssn = app.db
+    ssn = Session(bind=app.db_engine)  # new session required
 
     # Act
     new_alerts, sent_alerts = 0, 0
