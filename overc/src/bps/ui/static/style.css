@@ -1,6 +1,9 @@
 /* Angular */
 [ng\:cloak], [ng-cloak], [data-ng-cloak], [x-ng-cloak], .ng-cloak, .x-ng-cloak {
-  display: none !important;
+    display: none !important;
+}
+[ng-click], [data-ng-click], [x-ng-click] {
+    cursor: pointer;
 }
 
 /* Generic */
@@ -13,6 +16,14 @@ table caption {
 }
 
 /* Services */
+#services .btn-delete {
+    display: inline-block;
+    visibility: hidden;
+    color: #F00;
+    font-size: 10px;
+}
+#services tr :hover .btn-delete { visibility: visible; }
+
 #services .hint {
     font-size: 0.8em;
     font-weight: normal;

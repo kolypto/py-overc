@@ -9,6 +9,12 @@ from overc.lib.db import models
 class UITest(ApplicationTest, unittest.TestCase):
     """ Test UI """
 
+    def assertItemsCount(self, servers, services, alerts):
+        """ Count items in the DB """
+        self.assertEqual(self.db.query(models.Server).count(), servers)
+        self.assertEqual(self.db.query(models.Service).count(), services)
+        self.assertEqual(self.db.query(models.Alert).count(), alerts)
+
     @freeze_time('2014-01-01 00:00:00')
     def test_api_status_server(self):
         """ Test /api/status/server/:server_id """
@@ -124,3 +130,34 @@ class UITest(ApplicationTest, unittest.TestCase):
         self.assertIn('alerts', res)
         self.assertEqual(len(res['alerts']), 1)
         self.assertDictEqual(res['alerts'][0], alerts[3])
+
+
+    def test_api_items_delete(self):
+        """ Test items API: DELETE /api/item/* """
+        # First, report something
+        res, rv = self.test_client.jsonapi('POST', '/api/set/service/status', {
+            'server': {'name': 'a.example.com', 'key': '1234'},
+            'period': 60,
+            'services': [ {'name': str(i), 'state': 'OK', 'info': 'Fine'} for i in range(1, 5) ]
+        })
+        self.assertEqual(rv.status_code, 200)
+
+        res, rv = self.test_client.jsonapi('POST', '/api/set/alerts', {
+            'server': {'name': 'a.example.com', 'key': '1234'},
+            'alerts': [{'message': '0'}] + [ {'message': str(i), 'service': str(i)} for i in range(1, 5) ]
+        })
+        self.assertEqual(rv.status_code, 200)
+
+        self.assertItemsCount(1, 4, 5)  # 1 server, 4 services, 4 service alerts, 1 server alert
+
+        # Try to delete service
+        res, rv = self.test_client.jsonapi('DELETE', '/ui/api/item/service/4')
+        self.assertEqual(rv.status_code, 200)
+        self.assertIsNone(self.db.query(models.Service).get(4))
+        self.assertItemsCount(1, 3, 4)  # -1 service: -1 service alert
+
+        # Try to delete server
+        res, rv = self.test_client.jsonapi('DELETE', '/ui/api/item/server/1')
+        self.assertEqual(rv.status_code, 200)
+        self.assertIsNone(self.db.query(models.Server).get(1))
+        self.assertItemsCount(0, 0, 0)  # -1 server: -3 services, -3 service alerts, -1 server alert

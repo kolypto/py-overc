@@ -141,9 +141,38 @@ def api_status_alerts(server_id=None, service_id=None):
         ]
     }
 
+
+#region Items
+
+@bp.route('/api/item/server/<server_id>', methods=['DELETE'])
+@jsonapi
+def api_server_delete(server_id):
+    """ Server CRUD: Delete """
+    ssn = g.db
+
+    server = ssn.query(models.Server).get(server_id)
+    ssn.delete(server)
+    ssn.commit()
+
+    return {'ok': 1}
+
+
+@bp.route('/api/item/service/<service_id>', methods=['DELETE'])
+@jsonapi
+def api_service_delete(service_id):
+    """ Service CRUD: Delete """
+    ssn = g.db
+
+    service = ssn.query(models.Service).get(service_id)
+    ssn.delete(service)
+    ssn.commit()
+
+    return {'ok': 1}
+
+#endregion
+
 # TODO: display app version in the UI
 # TODO: API to rename servers, services
-# TODO: API to remove servers, services
 # TODO: API to test alert plugins
 
 #endregion

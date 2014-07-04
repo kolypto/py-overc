@@ -48,7 +48,7 @@ class Service(Base):
     name = Column(String(32), nullable=False, doc="Service machine name (as reported from the remote)")
     title = Column(Unicode(64), nullable=False, default=u'', doc="Service title")
 
-    server = relationship(Server, foreign_keys=server_id, backref='services')
+    server = relationship(Server, foreign_keys=server_id, backref=backref('services', passive_deletes=True))
 
     __table_args__ = (
         UniqueConstraint(server_id, name),
@@ -109,7 +109,7 @@ class ServiceState(Base):
     state = Column(Enum(*state_t.states, name='service_state'), default='UNK', nullable=False, doc='Service status')
     info = Column(UnicodeText, nullable=False, doc='Service info')
 
-    service = relationship(Service, foreign_keys=service_id, backref='states')
+    service = relationship(Service, foreign_keys=service_id, backref=backref('states', passive_deletes=True))
 
     __table_args__ = (
         Index('idx_serviceid_rtime', service_id, rtime),
@@ -161,8 +161,8 @@ class Alert(Base):
     event = Column(String(32), nullable=False, doc="Alert event")
     message = Column(UnicodeText, nullable=False, doc="Alert details")
 
-    server = relationship(Server, foreign_keys=server_id, backref=backref('alerts', order_by=id.desc()))
-    service = relationship(Service, foreign_keys=service_id, backref=backref('alerts', order_by=id.desc()))
+    server = relationship(Server, foreign_keys=server_id, backref=backref('alerts', passive_deletes=True, order_by=id.desc()))
+    service = relationship(Service, foreign_keys=service_id, backref=backref('alerts', passive_deletes=True, order_by=id.desc()))
 
     __table_args__ = (
         Index('idx_reported', reported),

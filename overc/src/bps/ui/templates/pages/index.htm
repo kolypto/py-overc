@@ -20,7 +20,7 @@
     <!--nav class="navbar navbar-default" role="navigation">
         <div class="container-fluid">
             <div class="navbar-header">
-                <a class="navbar-brand" href="#">OverC</a>
+                <a class="navbar-brand">OverC</a>
             </div>
         </div>
     </nav-->
@@ -48,12 +48,14 @@
                     <tr ng-repeat="service in server.services track by service.id">
                         <th class="col-md-2" rowspan="{{ server.services.length }}" ng-if="$first">
                             <div class="label label-danger pull-right" ng-if="server.n_alerts" title="Alerts today">{{ server.n_alerts }}</div>
-                            <a href="#">{{ server.title }}</a>
+                            <a>{{ server.title }}</a>
+                                <a class="btn-delete glyphicon glyphicon-remove" title="Delete server" ng-click="actions.delete_server(server.id)"></a>
                             <div class="hint">{{ server.name }}, IP: {{ server.ip }}</div>
                         </th>
                         <td class="col-md-2">
                             <div class="label label-danger pull-right" ng-if="service.n_alerts" title="Alerts today">{{ service.n_alerts }}</div>
-                            <a href="#">{{ service.title }}</a>
+                            <a>{{ service.title }}</a>
+                                <a class="btn-delete glyphicon glyphicon-remove" title="Delete service" ng-click="actions.delete_service(service.id)"></a>
                             <div class="hint">{{ service.name }}, period: {{ service.period }}s</div>
                         </td>
                         <td class="col-md-2 service-state state-{{ service.state.state }}" ng-if="service.state">
@@ -87,8 +89,8 @@
                 <TBODY>
                     <tr ng-repeat="alert in alerts track by alert.id">
                         <td>{{ alert.ctime }}</td>
-                        <td><a href="#">{{ alert.server }}</a></td>
-                        <td><a href="#">{{ alert.service }}</a></td>
+                        <td><a>{{ alert.server }}</a></td>
+                        <td><a>{{ alert.service }}</a></td>
                         <td>{{ alert.channel }} / {{ alert.event }}</td>
                         <td>{{ alert.message }}</td>
                     </tr>

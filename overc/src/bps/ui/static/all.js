@@ -6,22 +6,31 @@
     /** API service
      */
     overcApplication.service('api', ['$resource', function($resource){
-        this.serverStatus  = $resource(
-            'api/status/server/:server_id',
-            {server_id: undefined},
-            {});
-        this.serverAlerts  = $resource(
-            'api/status/alerts/server/:server_id',
-            {server_id: undefined},
-            {
-                get: { method: 'GET', params: { hours: 24 } }
-            });
-        this.serviceAlerts = $resource(
-            'api/status/alerts/service_id/:service_id',
-            {service_id: undefined},
-            {
-                get: { method: 'GET', params: { hours: 24 } }
-            });
+        /** Status API
+         * @type {Object.<String, { get: Function }>}
+         */
+        this.status = {
+            serverStatus: $resource('api/status/server/:server_id',
+                {server_id: undefined}, {}),
+            serverAlerts: $resource('api/status/alerts/server/:server_id',
+                {server_id: undefined}, {
+                    get: { method: 'GET', params: { hours: 24 } }
+                }),
+            serviceAlerts: $resource('api/status/alerts/service_id/:service_id',
+                {service_id: undefined}, {
+                    get: { method: 'GET', params: { hours: 24 } }
+                })
+        };
+
+        /** Items API
+         * @type {Object.<String, { delete: Function }>}
+         */
+        this.items = {
+            server: $resource('api/item/server/:server_id',
+                {}, {}),
+            service: $resource('api/item/service/:service_id',
+                {}, {})
+        };
     }]);
 
     /** Exchange service
@@ -60,9 +69,24 @@
          */
         $scope.supervisor_lag = true;
 
+        /** Action handlers
+         */
+        $scope.actions = {
+            delete_server: function(server_id){
+                api.items.server.delete({server_id: server_id}, function(res){
+                    X.emit('update-services');
+                });
+            },
+            delete_service: function(service_id){
+                api.items.service.delete({service_id: service_id}, function(res){
+                    X.emit('update-services');
+                });
+            }
+        };
+
         // Auto-update servers
         var updateServers = function(){
-            api.serverStatus.get(function(res){
+            api.status.serverStatus.get(function(res){
                 $scope.servers = res.servers;
                 $scope.n_alerts = res.n_alerts;
                 $scope.supervisor_lag = res.supervisor_lag;
@@ -75,6 +99,9 @@
         $scope.$watch('n_alerts', function(val, oldVal){
             X.emit('update-alerts');
         });
+
+        // Auto-update servers & services
+        X.on('update-services', updateServers);
     }]);
 
     /** Alerts controller
@@ -86,7 +113,7 @@
         $scope.alerts = [];
 
         X.on('update-alerts', _.debounce(function(){
-            api.serverAlerts.get(function(res){
+            api.status.serverAlerts.get(function(res){
                 $scope.alerts = res.alerts;
             });
         }, 100));
