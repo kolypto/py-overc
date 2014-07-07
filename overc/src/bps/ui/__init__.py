@@ -135,7 +135,8 @@ def api_status_alerts(server_id=None, service_id=None):
                 'ctime': alert.ctime.isoformat(sep=' '),
                 'channel': alert.channel,
                 'event': alert.event,
-                'message': alert.message
+                'message': alert.message,
+                'state_info': alert.service_state.info if alert.service_state else None
             }
             for alert in alerts
         ]

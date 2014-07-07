@@ -220,7 +220,7 @@ class ApiTest(ApplicationTest, unittest.TestCase):
         self.assertMultiLineEqual(
             overc_readlog(),
             u'localhost b: '
-            u'[service:state/changed] '
+            u'[service:state/UNK] '
             u'State changed: "(?)" -> "UNK"'
             '\n'
             u'Current: UNK: hey2 (sent unsupported state: "BULLSHIT")'
@@ -237,7 +237,7 @@ class ApiTest(ApplicationTest, unittest.TestCase):
         self.assertMultiLineEqual(
             overc_readlog(),
             u'localhost a: '
-            u'[service:state/changed] '
+            u'[service:state/WARN] '
             u'State changed: "OK" -> "WARN"'
             '\n'
             u'Current: WARN: hey3'
@@ -262,7 +262,7 @@ class ApiTest(ApplicationTest, unittest.TestCase):
         self.assertMultiLineEqual(
             overc_readlog(),
             u'localhost a: '
-            u'[service:state/changed] '
+            u'[service:state/OK] '
             u'State changed: "WARN" -> "OK"'
             '\n'
             u'Current: OK: hey5'

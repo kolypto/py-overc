@@ -4,7 +4,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm.session import object_session
 from sqlalchemy.sql.schema import Column, ColumnDefault
 from sqlalchemy.sql.schema import ForeignKey, UniqueConstraint, Index
-from sqlalchemy import Boolean, SmallInteger, Integer, BigInteger, Float, String, Text, Unicode, UnicodeText, Binary, DateTime, Enum
+from sqlalchemy.sql.sqltypes import Boolean, SmallInteger, Integer, BigInteger, Float, String, Text, Unicode, UnicodeText, Binary, DateTime, Enum
 from sqlalchemy.orm import relationship, backref, remote, foreign
 
 from sqlalchemy.sql.expression import select, and_, func
@@ -153,6 +153,7 @@ class Alert(Base):
     id = Column(BigInteger, primary_key=True, nullable=False)
     server_id = Column(Integer, ForeignKey(Server.id, ondelete='CASCADE'), nullable=True, doc="Server id")
     service_id = Column(Integer, ForeignKey(Service.id, ondelete='CASCADE'), nullable=True, doc="Service id")
+    service_state_id = Column(BigInteger, ForeignKey(ServiceState.id, ondelete='SET NULL'), nullable=True, doc="Service state id (if any)")
 
     reported = Column(Boolean, nullable=False, default=False, doc="Alert reported (notifications sent)?")
     ctime = Column(DateTime, default=datetime.utcnow, doc="Creation time")
@@ -163,6 +164,7 @@ class Alert(Base):
 
     server = relationship(Server, foreign_keys=server_id, backref=backref('alerts', passive_deletes=True, order_by=id.desc()))
     service = relationship(Service, foreign_keys=service_id, backref=backref('alerts', passive_deletes=True, order_by=id.desc()))
+    service_state = relationship(ServiceState, foreign_keys=service_state_id, backref=backref('alerts', passive_deletes=True, uselist=False))
 
     __table_args__ = (
         Index('idx_reported', reported),

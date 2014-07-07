@@ -34,8 +34,9 @@ def _check_service_states(ssn):
             ssn.add(models.Alert(
                 server=s.service.server,
                 service=s.service,
+                service_state=s,
                 channel='service:state',
-                event='changed',
+                event=s.state,
                 message=u'State changed: "{}" -> "{}"'.format(s.prev.state if s.prev else '(?)', s.state)
             ))
             new_alerts += 1
@@ -45,8 +46,9 @@ def _check_service_states(ssn):
                 ssn.add(models.Alert(
                     server=s.service.server,
                     service=s.service,
+                    service_state=s,
                     channel='service:state',
-                    event='unk',
+                    event=s.state,
                     message=u'Service state unknown!'
                 ))
                 new_alerts += 1

@@ -92,7 +92,10 @@
                         <td><a>{{ alert.server }}</a></td>
                         <td><a>{{ alert.service }}</a></td>
                         <td>{{ alert.channel }} / {{ alert.event }}</td>
-                        <td>{{ alert.message }}</td>
+                        <td>
+                            {{ alert.message }}
+                            <span ng-if="alert.state_info">: {{ alert.state_info }}</span>
+                        </td>
                     </tr>
                 </TBODY>
             </table>
