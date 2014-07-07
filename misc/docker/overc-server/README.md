@@ -36,4 +36,4 @@ Run MySQL database, OverC server:
 
     $ docker start overc-db || docker run --name="overc-db" -d -e MYSQL_ROOT_PASSWORD='root' -e MYSQL_DATABASE='overc' -e MYSQL_USER='overc' -e MYSQL_PASSWORD='overc' -e MYSQL_SET_KEYBUF=32M kolypto/mysql
 
-    $ docker start overc-server || docker run --name="overc-server" -d --link overc-db:db -e OVERC_DB_LINK=DB_PORT_3306 -p 80:80 -v /etc/overc:/etc/overc kolypto/overc-server
+    $ docker start overc-server || docker run --name="overc-server" -d --link overc-db:db -e OVERC_DB_LINK=DB_PORT_3306 -e OVERC_API_AUTH=apiuser:pass -e OVERC_UI_AUTH=admin:pass -p 80:80 -v /etc/overc:/etc/overc kolypto/overc-server

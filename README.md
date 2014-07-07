@@ -69,7 +69,7 @@ More details are given in [Server Configuration](#server-configuration).
 If you're lazy to set it up, there's a Docker container ready for you :)
 
     $ docker start overc-db || docker run --name="overc-db" -d -e MYSQL_ROOT_PASSWORD='root' -e MYSQL_DATABASE='overc' -e MYSQL_USER='overc' -e MYSQL_PASSWORD='overc' -e MYSQL_SET_KEYBUF=32M kolypto/mysql
-    $ docker start overc-server || docker run --name="overc-server" -d --link overc-db:db -e OVERC_DB_LINK=DB_PORT_3306 -p 5000:80 -v /etc/overc:/etc/overc kolypto/overc-server
+    $ docker start overc-server || docker run --name="overc-server" -d --link overc-db:db -e OVERC_DB_LINK=DB_PORT_3306 -p 5000:80 kolypto/overc-server
     
 Now you have a full-featured OverC server running on port `5000`!
 
