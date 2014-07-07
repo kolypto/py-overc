@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from logging import getLogger
 from collections import defaultdict
+from sqlalchemy.orm import contains_eager
 
 from sqlalchemy.sql import func
 from flask import Blueprint
@@ -27,18 +28,23 @@ def index():
 
 #region API
 
-@bp.route('/api/status/server')
-@bp.route('/api/status/server/<server_id>')
+@bp.route('/api/status/')
+@bp.route('/api/status/server/<int:server_id>')
+@bp.route('/api/status/service/<int:service_id>')
 @jsonapi
-def api_status_server(server_id=None):
+def api_status(server_id=None, service_id=None):
     """ Get all available information """
     ssn = g.db
 
     # Filter servers
-    servers = ssn.query(models.Server)
-    if server_id:
-        servers = servers.filter(models.Server.id == server_id)
-    servers = servers.all()
+    servers = ssn.query(models.Server) \
+        .join(models.Server.services) \
+        .options(contains_eager(models.Server.services)) \
+        .filter(
+            models.Server.id == server_id   if server_id  else True,
+            models.Service.id == service_id if service_id else True
+        ) \
+        .all()
 
     # Count alerts for 24h
     alert_counts = ssn.query(
@@ -48,19 +54,21 @@ def api_status_server(server_id=None):
     ) \
         .filter(
             models.Alert.ctime >= (datetime.utcnow() - timedelta(hours=24)),
-            models.Alert.server_id == server_id if server_id else True
+            models.Alert.server_id == server_id if server_id else True,
+            models.Alert.service_id == service_id if service_id else True
         ) \
         .group_by(models.Alert.server_id, models.Alert.service_id) \
         .all()
+
     server_alerts = defaultdict(lambda: 0)
     service_alerts = defaultdict(lambda: 0)
     total_alerts = 0
-    for (server_id, service_id, n) in alert_counts:
+    for (srv_id, svc_id, n) in alert_counts:
         total_alerts += n
-        if service_id:
-            service_alerts[service_id] += n
-        elif server_id:
-            server_alerts[server_id] += n
+        if svc_id:
+            service_alerts[svc_id] += n
+        elif srv_id:
+            server_alerts[srv_id] += n
 
     # Test whether there are any service states not checked, which probably means the supervisor thread is no running
     last_checked = ssn.query(func.min(models.ServiceState.rtime)) \
@@ -70,10 +78,20 @@ def api_status_server(server_id=None):
         .scalar()
     supervisor_lag = (datetime.utcnow() - last_checked).total_seconds() if last_checked else 0.0
 
-    #     Format
+    # Last state id
+    last_state_id = ssn.query(func.max(models.ServiceState.id)) \
+        .filter(models.ServiceState.service_id == service_id if service_id else True) \
+        .scalar()
+
+    # Format
     return {
-        'n_alerts': total_alerts,  # alerts today (for all selected servers)
-        'supervisor_lag': supervisor_lag,  # Seconds ago the supervisor process last checked something
+        # Statistics
+        'stats': {
+            'n_alerts': total_alerts,  # alerts today (for all selected servers)
+            'last_state_id': last_state_id,  # Last ServiceState.id
+            'supervisor_lag': supervisor_lag,  # Seconds ago the supervisor process last checked something
+        },
+        # Servers & Services
         'servers': sorted([
             {
                 'id': server.id,
@@ -102,9 +120,50 @@ def api_status_server(server_id=None):
     }
 
 
-@bp.route('/api/status/alerts/server')
-@bp.route('/api/status/alerts/server/<server_id>')
-@bp.route('/api/status/alerts/service/<service_id>')
+@bp.route('/api/status/service/<int:service_id>/states')
+@jsonapi
+def api_status_service_states(service_id):
+    """ Service states for 24h """
+    ssn = g.db
+
+    dtime = timedelta(hours=int(request.args.get('hours', default=24)))
+
+    # Load states
+    states = ssn.query(models.ServiceState) \
+        .filter(
+            models.ServiceState.rtime >= (datetime.utcnow() - dtime),
+            models.ServiceState.service_id == service_id
+        ) \
+        .order_by(models.ServiceState.id.desc()) \
+        .all()
+
+    # Format
+    return {
+        'states': [
+            {
+                'id': state.id,
+                'rtime': state.rtime.isoformat(sep=' '),
+                'state': state.state,
+                'info': state.info,
+
+                'alerts': [ {
+                        'id': alert.id,
+                        'channel': alert.channel,
+                        'event': alert.event,
+                        'message': alert.message,
+                        'severity': models.state_t.states[alert.severity]
+                    } for alert in state.alerts ],
+                'service': unicode(state.service),
+                'service_id': state.service_id,
+            }
+            for state in states
+        ]
+    }
+
+
+@bp.route('/api/status/alerts/')
+@bp.route('/api/status/alerts/server/<int:server_id>')
+@bp.route('/api/status/alerts/service/<int:service_id>')
 @jsonapi
 def api_status_alerts(server_id=None, service_id=None):
     """ Alerts for 24h """
@@ -142,10 +201,9 @@ def api_status_alerts(server_id=None, service_id=None):
         ]
     }
 
-
 #region Items
 
-@bp.route('/api/item/server/<server_id>', methods=['DELETE'])
+@bp.route('/api/item/server/<int:server_id>', methods=['DELETE'])
 @jsonapi
 def api_server_delete(server_id):
     """ Server CRUD: Delete """
@@ -158,7 +216,7 @@ def api_server_delete(server_id):
     return {'ok': 1}
 
 
-@bp.route('/api/item/service/<service_id>', methods=['DELETE'])
+@bp.route('/api/item/service/<int:service_id>', methods=['DELETE'])
 @jsonapi
 def api_service_delete(service_id):
     """ Service CRUD: Delete """

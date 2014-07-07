@@ -23,8 +23,8 @@ class UITest(ApplicationTest, unittest.TestCase):
             'server': {'name': 'a.example.com', 'key': '1234'},
             'period': 60,
             'services': [
-                {'name': 'app', 'state': 'OK', 'info': 'Fine'},
-                {'name': 'db', 'state': 'OK', 'info': 'Available'},
+                {'name': 'app', 'state': 'OK', 'info': 'Fine'},  # id=1
+                {'name': 'db', 'state': 'OK', 'info': 'Available'},  # id=2
             ]
         })
         self.assertEqual(rv.status_code, 200)
@@ -32,7 +32,7 @@ class UITest(ApplicationTest, unittest.TestCase):
             'server': {'name': 'b.example.com', 'key': '9876'},
             'period': 90,
             'services': [
-                {'name': 'nginx', 'state': 'OK', 'info': 'Running'},
+                {'name': 'nginx', 'state': 'OK', 'info': 'Running'},  # id=3
             ]
         })
         self.assertEqual(rv.status_code, 200)
@@ -49,14 +49,16 @@ class UITest(ApplicationTest, unittest.TestCase):
         self.assertEqual(rv.status_code, 200)
 
         # Now test the API: get all services' state
-        res, rv = self.test_client.jsonapi('GET', '/ui/api/status/server')
+        res, rv = self.test_client.jsonapi('GET', '/ui/api/status/')
         self.assertEqual(rv.status_code, 200)
+        self.assertDictEqual(res['stats'], { 'n_alerts': 3, 'last_state_id': 3, 'supervisor_lag': 0.0 })
         self.assertIn('servers', res)
         self.assertEqual(len(res['servers']), 2)
 
         # Test server 1
         server = res['servers'][0]
         services = server.pop('services')
+        self.assertEqual(len(services), 2)
         self.assertDictEqual(server, {'id': 1, 'name': 'a.example.com', 'title': u'a.example.com', 'ip': None, 'n_alerts': 2})
         self.assertEqual(services[0], {'id': 1, 'period': 60, 'name': 'app',   'title': u'app',   'n_alerts': 0,
                                        'state': {'rtime': '2014-01-01 00:00:00', 'timed_out': False, 'seen_ago': '0:00:00', 'state': 'OK', 'info': 'Fine'}})
@@ -66,16 +68,50 @@ class UITest(ApplicationTest, unittest.TestCase):
         # Test server 2
         server = res['servers'][1]
         services = server.pop('services')
+        self.assertEqual(len(services), 1)
         self.assertEqual(services[0], {'id': 3, 'period': 90, 'name': 'nginx', 'title': u'nginx', 'n_alerts': 0,
                                        'state': {'rtime': '2014-01-01 00:00:00', 'timed_out': False, 'seen_ago': '0:00:00', 'state': 'OK', 'info': 'Running'}})
 
-        # Now try to load a single server: /:server_id
+
+
+        # Now try to load a single server: /server/:server_id
         res, rv = self.test_client.jsonapi('GET', '/ui/api/status/server/2')
+        self.assertEqual(rv.status_code, 200)
+        self.assertDictEqual(res['stats'], {'n_alerts': 0, 'last_state_id': 3, 'supervisor_lag': 0.0})
+        self.assertEqual(len(res['servers']), 1)
+        self.assertEqual(len(res['servers'][0]['services']), 1)
         # Test server 2
         server = res['servers'][0]
         services = server.pop('services')
         self.assertEqual(services[0], {'id': 3, 'period': 90, 'name': 'nginx', 'title': u'nginx', 'n_alerts': 0,
                                        'state': {'rtime': '2014-01-01 00:00:00', 'timed_out': False, 'seen_ago': '0:00:00', 'state': 'OK', 'info': 'Running'}})
+
+
+
+        # Now, try to load a single service: /service/:service_id
+        res, rv = self.test_client.jsonapi('GET', '/ui/api/status/service/2')
+        self.assertEqual(rv.status_code, 200)
+        self.assertDictEqual(res['stats'], {'n_alerts': 1, 'last_state_id': 2, 'supervisor_lag': 0.0})
+        self.assertEqual(len(res['servers']), 1)
+        self.assertEqual(len(res['servers'][0]['services']), 1)
+        # Test server 1
+        server = res['servers'][0]
+        services = server.pop('services')
+        self.assertEqual(services[0], {'id': 2, 'period': 60, 'name': 'db',    'title': u'db',    'n_alerts': 1,
+                                       'state': {'rtime': '2014-01-01 00:00:00', 'timed_out': False, 'seen_ago': '0:00:00', 'state': 'OK', 'info': 'Available'}})
+
+
+
+        # Now, load service states: /service/:service_id/states
+        res, rv = self.test_client.jsonapi('GET', '/ui/api/status/service/2/states')
+        self.assertEqual(rv.status_code, 200)
+        states = res.pop('states')
+        self.assertEqual(len(states), 1)
+        self.assertDictEqual(states[0], {
+            'id': 2, 'rtime': '2014-01-01 00:00:00', 'state': 'OK', 'info': 'Available',
+            'alerts': [],
+            'service_id': 2, 'service': 'db'
+        })
 
     @freeze_time('2014-01-01 00:00:00')
     def test_api_status_alerts(self):
@@ -102,14 +138,14 @@ class UITest(ApplicationTest, unittest.TestCase):
         # Alerts
         alerts = [
             None,
-            {'id': 1, 'server': 'a.example.com', 'server_id': 1, 'service': None, 'service_id': None, 'ctime': '2014-01-01 00:00:00', 'channel': 'api', 'event': 'alert', 'message': 'o_O'},
-            {'id': 2, 'server': 'a.example.com', 'server_id': 1, 'service': None, 'service_id': None, 'ctime': '2014-01-01 00:00:00', 'channel': 'api', 'event': 'alert', 'message': 'Hurts'},
-            {'id': 3, 'server': 'a.example.com', 'server_id': 1, 'service': 'a',  'service_id': 1,    'ctime': '2014-01-01 00:00:00', 'channel': 'api', 'event': 'alert', 'message': 'Sick'},
-            {'id': 4, 'server': 'b.example.com', 'server_id': 2, 'service': None, 'service_id': None, 'ctime': '2014-01-01 00:00:00', 'channel': 'api', 'event': 'alert', 'message': 'WOW'}
+            {'id': 1, 'server': 'a.example.com', 'server_id': 1, 'service': None, 'service_id': None, 'ctime': '2014-01-01 00:00:00', 'channel': 'api', 'event': 'alert', 'message': 'o_O',   'state_info': None},
+            {'id': 2, 'server': 'a.example.com', 'server_id': 1, 'service': None, 'service_id': None, 'ctime': '2014-01-01 00:00:00', 'channel': 'api', 'event': 'alert', 'message': 'Hurts', 'state_info': None},
+            {'id': 3, 'server': 'a.example.com', 'server_id': 1, 'service': 'a',  'service_id': 1,    'ctime': '2014-01-01 00:00:00', 'channel': 'api', 'event': 'alert', 'message': 'Sick',  'state_info': None},
+            {'id': 4, 'server': 'b.example.com', 'server_id': 2, 'service': None, 'service_id': None, 'ctime': '2014-01-01 00:00:00', 'channel': 'api', 'event': 'alert', 'message': 'WOW',   'state_info': None}
         ]
 
         # Test: /ui/api/status/alerts/server
-        res, rv = self.test_client.jsonapi('GET', '/ui/api/status/alerts/server')
+        res, rv = self.test_client.jsonapi('GET', '/ui/api/status/alerts/')
         self.assertIn('alerts', res)
         self.assertEqual(len(res['alerts']), 4)
         self.assertDictEqual(res['alerts'][0], alerts[4])

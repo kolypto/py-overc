@@ -32,12 +32,15 @@ table caption {
 
 #services TBODY th { vertical-align: middle; }
 
-#services .service-state.state-UNK { background-image: url("img/icons/VistaBase/PNG/24x24/Circle_Grey.png"); }
-#services .service-state.state-OK { background-image: url("img/icons/VistaBase/PNG/24x24/Circle_Green.png"); }
-#services .service-state.state-WARN { background-image: url("img/icons/VistaBase/PNG/24x24/Circle_Orange.png"); }
-#services .service-state.state-FAIL { background-image: url("img/icons/VistaBase/PNG/24x24/Circle_Red.png"); }
-#services .service-state {
+.service-state.state-UNK { background-image: url("img/icons/VistaBase/PNG/24x24/Circle_Grey.png"); }
+.service-state.state-OK { background-image: url("img/icons/VistaBase/PNG/24x24/Circle_Green.png"); }
+.service-state.state-WARN { background-image: url("img/icons/VistaBase/PNG/24x24/Circle_Orange.png"); }
+.service-state.state-FAIL { background-image: url("img/icons/VistaBase/PNG/24x24/Circle_Red.png"); }
+.service-state {
     background-repeat: no-repeat;
     background-position: 2px 2px;
     padding-left: 32px !important;
 }
+
+/* States */
+#states .state-info .label { margin-left: 5px; }

@@ -74,12 +74,12 @@ class Service(Base):
 
 class state_t(int):
     """ Comparable enum for state """
-    states = ('UNK', 'OK', 'WARN', 'FAIL')
+    states = ('OK', 'WARN', 'FAIL',   'UNK')
 
-    UNK = 0
-    OK = 1
-    WARN = 2
-    FAIL = 3
+    OK = 0
+    WARN = 1
+    FAIL = 2
+    UNK = 3
 
     def __new__(cls, state):
         intval = cls.states.index(state)
@@ -164,7 +164,7 @@ class Alert(Base):
 
     server = relationship(Server, foreign_keys=server_id, backref=backref('alerts', passive_deletes=True, order_by=id.desc()))
     service = relationship(Service, foreign_keys=service_id, backref=backref('alerts', passive_deletes=True, order_by=id.desc()))
-    service_state = relationship(ServiceState, foreign_keys=service_state_id, backref=backref('alerts', passive_deletes=True, uselist=False))
+    service_state = relationship(ServiceState, foreign_keys=service_state_id, uselist=False, backref=backref('alerts', passive_deletes=True, order_by=id.desc()))
 
     __table_args__ = (
         Index('idx_reported', reported),
@@ -183,3 +183,24 @@ class Alert(Base):
             # message
             self.message
         ])
+
+    @property
+    def severity(self):
+        """ Alert severity as a number
+        :return: Number: {0..3}
+        :rtype: int
+        """
+        return {
+            'plugin/online': state_t.OK,
+            'plugin/offline': state_t.FAIL,
+
+            'service:state/OK': state_t.OK,
+            'service:state/WARN': state_t.WARN,
+            'service:state/FAIL': state_t.FAIL,
+            'service:state/UNK': state_t.UNK,
+
+            'api/alert': state_t.FAIL
+        }.get(
+            '{}/{}'.format(self.channel, self.event),
+            state_t.FAIL
+        )

@@ -41,18 +41,6 @@ def _check_service_states(ssn):
             ))
             new_alerts += 1
 
-            # In addition, report "UNK" states!
-            if s.state == 'UNK' and s.prev is not None:
-                ssn.add(models.Alert(
-                    server=s.service.server,
-                    service=s.service,
-                    service_state=s,
-                    channel='service:state',
-                    event=s.state,
-                    message=u'Service state unknown!'
-                ))
-                new_alerts += 1
-
         # Save
         s.checked = True
         ssn.add(s)
@@ -83,21 +71,21 @@ def _check_service_timeouts(ssn):
         was_timed_out = s.timed_out
         seen_ago = s.update_timed_out()
 
-        logger.debug(u'Checking service {service}: seen_ago={seen_ago}: {timed_out}'.format(service=s, seen_ago=seen_ago, timed_out='TIMED OUT' if s.timed_out else 'ok'))
+        logger.debug(u'Checking service {service}: seen_ago={seen_ago}: {timed_out}{was_timed_out}'.format(
+            service=s, seen_ago=seen_ago,
+            timed_out='TIMED OUT' if s.timed_out else 'ok',
+            was_timed_out=', and was timed out' if was_timed_out else ''))
 
         # Changed?
         if was_timed_out != s.timed_out:
             alert = models.Alert(
                 server=s.server,
                 service=s,
+                service_state=s.state,
                 channel='plugin'
             )
-            if s.timed_out:
-                alert.event = 'offline'
-                alert.message = u'Monitoring plugin offline'
-            else:
-                alert.event = 'online'
-                alert.message = u'Monitoring plugin back online'
+            alert.event = 'offline' if s.timed_out else 'online'
+            alert.message = u'Monitoring plugin offline' if s.timed_out else u'Monitoring plugin back online'
 
             ssn.add(alert)
             ssn.add(s)
