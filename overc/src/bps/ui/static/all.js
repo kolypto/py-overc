@@ -1,6 +1,8 @@
 (function(){
     var overcApplication = angular.module('overcApplication', ['ngResource', 'ui.router']);
 
+    /** Routing
+     */
     overcApplication.config(['$stateProvider', '$urlRouterProvider', function($stateProvider, $urlRouterProvider){
         //$urlRouterProvider.when('', '');
         $urlRouterProvider.otherwise('/overview'); // Redirect invalid URLs here
@@ -66,33 +68,32 @@
         })
     }]);
 
+    /** Global models
+     */
     overcApplication.run(['$rootScope', '$state', '$stateParams', function($rootScope, $state, $stateParams){
         // Add these so they're accessible from any scope
         $rootScope.$state = $state;
         $rootScope.$stateParams = $stateParams;
-
-        // Other global stuff
-        $rootScope.state = {
-            // FIXME: Notifications should be displayed by a controller which gets data through events
-            supervisor_lag: 0,
-            http_error: ''
-        };
     }]);
 
+    /** Providers configuration
+     */
     overcApplication.config(['$resourceProvider', function ($resourceProvider) {
         // Don't strip trailing slashes from calculated URLs
         //$resourceProvider.defaults.stripTrailingSlashes = false; // FIXME: Enable with AngularJS 1.3.0
     }]);
 
+    /** Intercept HTTP errors and send notifications
+     */
     overcApplication.config(['$httpProvider', function($httpProvider) {
         var http_err = _.template('"<%- config.method %> <%- config.url %>": <%- status %> <%- statusText %>.');
 
-        $httpProvider.interceptors.push(['$rootScope', '$q', function($rootScope, $q){ return {
+        $httpProvider.interceptors.push(['$rootScope', '$q', 'X', function($rootScope, $q, X){ return {
             // request: function(req){ console.log('Request', req); return req; },
             // response: function(res){ return res; },
             // requestError: function(rej){ return $q.reject(rej); },
             responseError: function(rej){
-                $rootScope.state.http_error = http_err(rej);
+                X.emit('statusbar-state', { http_error: http_err(rej) });
                 console.error(rej);
                 return $q.reject(rej);
             }
@@ -162,6 +163,22 @@
 
     // TODO: push updates from the server (WOW!)
 
+    /** Statusbar
+     */
+    overcApplication.controller('statusbarCtrl', ['$scope', 'X', function($scope, X){
+        /** Application state
+         * @type {Object}
+         */
+        $scope.state = {
+            supervisor_lag: 0,
+            http_error: '' // TODO: display list of errors, and remove after a timeout
+        };
+
+        $scope.$on('statusbar-state', function(event, state){
+            _.extend($scope.state, state);
+        });
+    }]);
+
     /** Services controller
      *
      * State params:
@@ -206,7 +223,8 @@
             var callback = function(res){
                 $scope.servers = res.servers;
                 $scope.stats = res.stats;
-                $rootScope.state.supervisor_lag = res.stats.supervisor_lag;
+
+                X.emit('statusbar-state', { supervisor_lag: res.stats.supervisor_lag });
 
                 // Set service state
                 if ($state.params.service_id)
