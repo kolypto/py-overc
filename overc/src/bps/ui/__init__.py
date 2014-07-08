@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 from logging import getLogger
 from collections import defaultdict
-from sqlalchemy.orm import contains_eager
+from sqlalchemy.orm import contains_eager, joinedload
 
 from sqlalchemy.sql import func
 from flask import Blueprint
@@ -129,8 +129,9 @@ def api_status_service_states(service_id):
 
     dtime = timedelta(hours=float(request.args.get('hours', default=24)))
 
-    # Load states
+    # Load states & alerts
     states = ssn.query(models.ServiceState) \
+        .options(joinedload(models.ServiceState.alerts)) \
         .filter(
             models.ServiceState.rtime >= (datetime.utcnow() - dtime),
             models.ServiceState.service_id == service_id
@@ -196,7 +197,6 @@ def api_status_service_states(service_id):
                                               'group': '-'.join(map(str, ss_ids)),
                                               'group_count': grp[1] - grp[0] + 1
                                           } ]
-
     # Format
     return {
         'states': [

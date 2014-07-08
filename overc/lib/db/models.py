@@ -112,7 +112,7 @@ class ServiceState(Base):
     service = relationship(Service, foreign_keys=service_id, backref=backref('states', passive_deletes=True))
 
     __table_args__ = (
-        Index('idx_serviceid_rtime', service_id, rtime),
+        Index('idx_serviceid_rtime_id', service_id, rtime, id),
         Index('idx_checked', checked)
     )
 
