@@ -97,7 +97,7 @@
             service: $resource('api/status/service/:service_id', {service_id: undefined}, {}),
 
             service_states: $resource('api/status/service/:service_id/states', {service_id: undefined}, {
-                    get: { method: 'GET', params: { hours: 24 } }
+                    get: { method: 'GET', params: { hours: 24, groups: undefined, expand: [] } }
                 }),
 
             alerts: {
@@ -232,7 +232,12 @@
             /** States load period
              * @type {Number}
              */
-            hours: 24
+            hours: 24,
+
+            /** List of groups to expand
+             * @type {Array.<Number>}
+             */
+            expand: []
         };
 
         /** Action handlers
@@ -242,6 +247,12 @@
              */
             load_more_states: function(){
                 $scope.sets.hours += 24;
+            },
+            /** Expand a group
+             * @param {String} group
+             */
+            group_expand: function(group){
+                $scope.sets.expand.push(group);
             }
         };
 
@@ -251,7 +262,12 @@
         $scope.states = [];
 
         var loadStates = function(){
-            api.status.service_states.get({service_id: $state.params.service_id, hours: $scope.sets.hours}, function(res){
+            api.status.service_states.get({
+                    service_id: $state.params.service_id,
+                    hours: $scope.sets.hours,
+                    groups: 'yes',
+                    expand: $scope.sets.expand
+            }, function(res){
                 $scope.states = _.map(res.states, function(state){
                     // Assign CSS class property
                     _.each(state.alerts, function(alert){
@@ -265,7 +281,11 @@
         };
 
         $scope.$on('update-states', _.debounce(loadStates, 100));
-        $scope.$watch('sets.hours', function(val, oldVal){
+        $scope.$watchCollection('sets.hours', function(val, oldVal){
+            if (val != oldVal)
+                loadStates();
+        });
+        $scope.$watchCollection('sets.expand', function(val, oldVal){
             if (val != oldVal)
                 loadStates();
         });

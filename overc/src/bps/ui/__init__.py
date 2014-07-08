@@ -138,6 +138,63 @@ def api_status_service_states(service_id):
         .order_by(models.ServiceState.id.desc()) \
         .all()
 
+    # Collapse
+    groups = request.args.get('groups', default=False)
+    if groups:
+        # Go through states and detect sequences of states with no changes: these are replaced with Groups
+        # A "change": state change or alerts
+
+        #: List of groups to expand
+        expand = set(request.args.getlist('expand') if request.args.has_key('expand') else ())
+
+        # Detect groups
+        prev_state = None
+        cur_group = None
+        groups = []
+        for i, s in enumerate(states):
+            # Init group
+            if cur_group is None:
+                cur_group = [i, None]
+
+            # Detect changes
+            has_changes = s.state != prev_state
+            has_changes |= len(s.alerts)
+            if has_changes:
+                # Put group
+                groups.append(cur_group)
+                # Unset group
+                cur_group = None
+            else:
+                # Store id
+                cur_group[1] = i
+
+            # Memo
+            prev_state = s.state
+        groups.append(cur_group)
+
+        # Filter groups
+        groups = [ (grp[0], grp[1]-1)  # Always include both border items
+                  for grp in groups if
+                  grp is not None and  # Ignore: empty groups
+                  grp[1] is not None and  # Ignore: incomplete groups
+                  (grp[1] - grp[0]) > 1 # Ignore: small groups of 0,1 items
+        ]
+
+        # Replace groups
+        for grp in reversed(groups):
+            ss = (states[grp[1]], states[grp[0]])
+            ss_ids = (ss[0].id, ss[1].id)
+            # Skip expanded groups
+            if '{}-{}'.format(*ss_ids) in expand:
+                continue
+            # Replace with group
+            states[grp[0] : grp[1]+1] = [ {
+                                              'id': ss[0].id,  # Just for Angular
+                                              'state': ss[0].state,
+                                              'group': '-'.join(map(str, ss_ids)),
+                                              'group_count': grp[1] - grp[0] + 1
+                                          } ]
+
     # Format
     return {
         'states': [
@@ -156,7 +213,7 @@ def api_status_service_states(service_id):
                     } for alert in state.alerts ],
                 'service': unicode(state.service),
                 'service_id': state.service_id,
-            }
+            } if isinstance(state, models.ServiceState) else state  # Groups :)
             for state in states
         ]
     }
@@ -231,7 +288,6 @@ def api_service_delete(service_id):
 
 #endregion
 
-# TODO: display app version in the UI
 # TODO: API to rename servers, services
 # TODO: API to test alert plugins
 

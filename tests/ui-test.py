@@ -197,3 +197,119 @@ class UITest(ApplicationTest, unittest.TestCase):
         self.assertEqual(rv.status_code, 200)
         self.assertIsNone(self.db.query(models.Server).get(1))
         self.assertItemsCount(0, 0, 0)  # -1 server: -3 services, -3 service alerts, -1 server alert
+
+
+    @freeze_time('2014-01-01 00:00:00')
+    def test_api_service_states_collapse(self):
+        """ Test /api/status/service/:service_id/states?groups=yes """
+        # Report data about service
+        res, rv = self.test_client.jsonapi('POST', '/api/set/service/status', {
+            'server': {'name': 'a.example.com', 'key': '1234'},
+            'period': 60,
+            'services':
+                [ {'name': 'app', 'state': 'OK',   'info': '1'} for i in range( 1,  9 +1) ] +
+                [ {'name': 'app', 'state': 'WARN', 'info': '2'} for i in range(10, 13 +1) ] +
+                [ {'name': 'app', 'state': 'FAIL', 'info': '3'} for i in range(14, 20 +1) ] +
+                [ {'name': 'app', 'state': 'OK',   'info': '4'} for i in range(21, 22 +1) ] +
+                [ {'name': 'app', 'state': 'WARN', 'info': '5'} for i in range(23, 25 +1) ] +
+                [ {'name': 'app', 'state': 'FAIL', 'info': '6'} for i in range(26, 30 +1) ] +
+                []
+        })
+        self.assertEqual(rv.status_code, 200)
+
+        # Assertion helpers
+        def assertState(row,  id, state, info, alerts=None):
+            self.assertDictEqual(row, {
+                'id': id,
+                'state': state, 'info': info,
+                'alerts': [ { 'id': a['id'], 'severity': 'FAIL', 'channel': 'test', 'event': 'test', 'message': 'test' } for a in alerts or [] ],
+                'rtime': '2014-01-01 00:00:00',
+                'service_id': 1,
+                'service': 'app'
+            })
+        def assertGroup(row, ids, state, group_count):
+            self.assertDictEqual(row, {
+                'id': ids[0],
+                'state': state,
+                'group': '-'.join(map(str, ids)),
+                'group_count': group_count
+            })
+
+        # Load: normal mode
+        res, rv = self.test_client.jsonapi('GET', '/ui/api/status/service/1/states')
+        self.assertEqual(rv.status_code, 200)
+        self.assertEqual(len(res['states']), 30)  # not collapsed
+
+        # Load: collapsed mode
+        res, rv = self.test_client.jsonapi('GET', '/ui/api/status/service/1/states?groups=yes')
+        self.assertEqual(rv.status_code, 200)
+        states = res.pop('states')
+        # Start & end of each group + delimiters
+        assertState(states[ 0], id=30, state='FAIL', info='6')
+        assertGroup(states[ 1],   [27, 29], 'FAIL', 3)
+        assertState(states[ 2], id=26, state='FAIL', info='6')
+        assertState(states[ 3], id=25, state='WARN', info='5')
+        assertState(states[ 4], id=24, state='WARN', info='5')
+        assertState(states[ 5], id=23, state='WARN', info='5')
+        assertState(states[ 6], id=22, state='OK',   info='4')
+        assertState(states[ 7], id=21, state='OK',   info='4')
+        assertState(states[ 8], id=20, state='FAIL', info='3')
+        assertGroup(states[ 9],   [15, 19], 'FAIL', 5)
+        assertState(states[10], id=14, state='FAIL', info='3')
+        assertState(states[11], id=13, state='WARN', info='2')
+        assertGroup(states[12],   [11, 12], 'WARN', 2)
+        assertState(states[13], id=10, state='WARN', info='2')
+        assertState(states[14], id= 9, state='OK',   info='1')
+        assertGroup(states[15],   [ 2, 8], 'OK', 7)
+        assertState(states[16], id= 1, state='OK',   info='1')
+        self.assertEqual(len(states), 17)
+
+
+        # Load: collapsed mode, with expanded ranges
+        res, rv = self.test_client.jsonapi('GET', '/ui/api/status/service/1/states?groups=yes&expand=27-29')
+        self.assertEqual(rv.status_code, 200)
+        states = res.pop('states')
+        # Start & end of each group + delimiters
+        assertState(states[0], id=30, state='FAIL', info='6')
+        assertState(states[1], id=29, state='FAIL', info='6')
+        assertState(states[2], id=28, state='FAIL', info='6')
+        assertState(states[3], id=27, state='FAIL', info='6')
+        assertState(states[4], id=26, state='FAIL', info='6')
+        assertState(states[5], id=25, state='WARN', info='5')
+        #...
+        self.assertEqual(len(states), 19)
+
+
+        # Insert alerts: should put more breaks
+        ssn = self.db
+        for sid in (25, 12, 5):
+           ssn.add(models.Alert(server_id=1, service_id=1, service_state_id=sid, channel='test', event='test', message=u'test'))
+        ssn.commit()
+
+        # Load: collapsed mode
+        res, rv = self.test_client.jsonapi('GET', '/ui/api/status/service/1/states?groups=yes')
+        self.assertEqual(rv.status_code, 200)
+        states = res.pop('states')
+        # Start & end of each group + delimiters
+        assertState(states[ 0], id=30, state='FAIL', info='6')
+        assertGroup(states[ 1],   [ 27, 29], 'FAIL', 3)
+        assertState(states[ 2], id=26, state='FAIL', info='6')
+        assertState(states[ 3], id=25, state='WARN', info='5', alerts=[{'id': 1}]) # Just inserted alert
+        assertState(states[ 4], id=24, state='WARN', info='5')
+        assertState(states[ 5], id=23, state='WARN', info='5')
+        assertState(states[ 6], id=22, state='OK',   info='4')
+        assertState(states[ 7], id=21, state='OK',   info='4')
+        assertState(states[ 8], id=20, state='FAIL', info='3')
+        assertGroup(states[ 9],   [ 15, 19], 'FAIL', 5)
+        assertState(states[10], id=14, state='FAIL', info='3')
+        assertState(states[11], id=13, state='WARN', info='2')
+        assertState(states[12], id=12, state='WARN', info='2', alerts=[{'id': 2}])  # Group eliminated
+        assertState(states[13], id=11, state='WARN', info='2')
+        assertState(states[14], id=10, state='WARN', info='2')
+        assertState(states[15], id= 9, state='OK',   info='1')
+        assertGroup(states[16],   [ 7, 8], 'OK', 2)
+        assertState(states[17], id= 6, state='OK',   info='1')
+        assertState(states[18], id= 5, state='OK',   info='1', alerts=[{'id': 3}])  # Group split
+        assertGroup(states[19],   [ 2, 4], 'OK', 3)
+        assertState(states[20], id= 1, state='OK',   info='1')
+        self.assertEqual(len(states), 21)

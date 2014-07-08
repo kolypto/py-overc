@@ -149,14 +149,18 @@
             </THEAD>
             <TBODY>
                 <tr ng-repeat="state in states track by state.id">
-                    <td class="col-md-2">
+                    <td colspan="4" ng-if="state.group" class="grouped">
+                        <a href class="center-block text-center" ng-click="actions.group_expand(state.group)">⋯ {{ state.group_count }} more ⋯</a>
+                    </td>
+
+                    <td class="col-md-2"  ng-if="!state.group">
                         {{ state.rtime }}
                     </td>
-                    <th class="col-md-2">{{ state.service }}</th>
-                    <td class="col-md-2 service-state state-{{ state.state }}">
+                    <th class="col-md-2"  ng-if="!state.group">{{ state.service }}</th>
+                    <td class="col-md-2 service-state state-{{ state.state }}"  ng-if="!state.group">
                         {{ state.state }}
                     </td>
-                    <td class="state-info">{{ state.info }}
+                    <td class="state-info"  ng-if="!state.group">{{ state.info }}
                         <div ng-repeat="alert in state.alerts" class="label label-{{ alert.css_class }}">{{ alert.message }}</div>
                     </td>
                 </tr>

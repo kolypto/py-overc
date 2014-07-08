@@ -44,6 +44,7 @@ table caption {
 
 /* States */
 #states .state-info .label { margin-left: 5px; }
+#states td.grouped { font-size: 0.8em; padding: 0; }
 
 /* Overview */
 #overview .services { line-height: 28px; }
