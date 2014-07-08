@@ -6,14 +6,14 @@ from setuptools import setup, find_packages
 setup(
     # http://pythonhosted.org/setuptools/setuptools.html
     name='overc',
-    version='1.0.8-0',
+    version='1.0.8-2',
     author='Mark Vartanyan',
     author_email='kolypto@gmail.com',
 
     url='https://github.com/kolypto/py-overc',
     license='BSD',
     description=__doc__,
-    long_description=open('README.md').read(),
+    long_description=open('README.rst').read(),
     keywords=['monitoring'],
 
     packages=find_packages(),
