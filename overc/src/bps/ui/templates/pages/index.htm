@@ -94,6 +94,7 @@
                         <ul class="list-unstyled list-inline">
                             <li ng-repeat="service in server.services track by service.id" class="service-state state-{{ service.state.state }}" title="{{ service.title }}">
                                 <div class="label label-danger" ng-if="service.n_alerts" title="Alerts today">{{ service.n_alerts }}</div>
+                                &ZeroWidthSpace;
                             </li>
                         </ul>
                     </td>
