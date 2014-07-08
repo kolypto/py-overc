@@ -127,7 +127,7 @@ def api_status_service_states(service_id):
     """ Service states for 24h """
     ssn = g.db
 
-    dtime = timedelta(hours=int(request.args.get('hours', default=24)))
+    dtime = timedelta(hours=float(request.args.get('hours', default=24)))
 
     # Load states
     states = ssn.query(models.ServiceState) \
@@ -170,7 +170,7 @@ def api_status_alerts(server_id=None, service_id=None):
     """ Alerts for 24h """
     ssn = g.db
 
-    dtime = timedelta(hours=int(request.args.get('hours', default=24)))
+    dtime = timedelta(hours=float(request.args.get('hours', default=24)))
 
     # Load alerts
     alerts = ssn.query(models.Alert) \

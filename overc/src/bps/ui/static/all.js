@@ -225,10 +225,33 @@
     /** Service States controller
      */
     overcApplication.controller('statesCtrl', ['$scope', '$state', 'api', 'X', function($scope, $state, api, X){
+        /** Settings
+         * @type {Object}
+         */
+        $scope.sets = {
+            /** States load period
+             * @type {Number}
+             */
+            hours: 24
+        };
+
+        /** Action handlers
+         */
+        $scope.actions = {
+            /** Load more alerts
+             */
+            load_more_states: function(){
+                $scope.sets.hours += 24;
+            }
+        };
+
+        /** States list
+         * @type {Array}
+         */
         $scope.states = [];
 
         var loadStates = function(){
-            api.status.service_states.get({service_id: $state.params.service_id}, function(res){
+            api.status.service_states.get({service_id: $state.params.service_id, hours: $scope.sets.hours}, function(res){
                 $scope.states = _.map(res.states, function(state){
                     // Assign CSS class property
                     _.each(state.alerts, function(alert){
@@ -242,6 +265,10 @@
         };
 
         $scope.$on('update-states', _.debounce(loadStates, 100));
+        $scope.$watch('sets.hours', function(val, oldVal){
+            if (val != oldVal)
+                loadStates();
+        });
     }]);
 
 
@@ -249,8 +276,24 @@
     /** Alerts controller
      */
     overcApplication.controller('alertsCtrl', ['$scope', '$state', 'api', 'X', function($scope, $state, api, X){
-        $scope.defs = {
+        /** Settings
+         * @type {Object}
+         */
+        $scope.sets = {
+            /** Alerts load period
+             * @type {Number}
+             */
             hours: 24
+        };
+
+        /** Action handlers
+         */
+        $scope.actions = {
+            /** Load more alerts
+             */
+            load_more_alerts: function(){
+                $scope.sets.hours += 24;
+            }
         };
 
         /** Alerts list
@@ -263,7 +306,7 @@
                 params = {
                     server_id: $state.params.server_id,
                     service_id: $state.params.service_id,
-                    hours: $scope.defs.hours
+                    hours: $scope.sets.hours
                 };
             if (params.server_id)
                 method = api.status.alerts.server;
@@ -276,7 +319,7 @@
         };
 
         $scope.$on('update-alerts', loadAlerts);
-        $scope.$watch('defs.hours', function(val, oldVal){
+        $scope.$watch('sets.hours', function(val, oldVal){
             if (val != oldVal)
                 loadAlerts();
         });

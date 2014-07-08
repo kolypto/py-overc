@@ -40,7 +40,7 @@
 
 
     <!-- Notifications -->
-    <div class="alert alert-danger" ng-if="state.supervisor_lag">
+    <div class="alert alert-danger" ng-if="state.supervisor_lag > 60">
         Supervisor process is not running correctly: some service states are not checked for {{ state.supervisor_lag }} seconds.
         Review OverC server logs.
     </div>
@@ -161,6 +161,9 @@
                     </td>
                 </tr>
             </TBODY>
+            <TFOOT>
+                <tr><td colspan="5"><a href class="btn btn-default btn-sm btn-block" ng-click="actions.load_more_states()">Load more</a></td></tr>
+            </TFOOT>
         </table>
     </script>
     <!-- /States -->
@@ -185,6 +188,9 @@
                     </td>
                 </tr>
             </TBODY>
+            <TFOOT>
+                <tr><td colspan="5"><a href class="btn btn-default btn-sm btn-block" ng-click="actions.load_more_alerts()">Load more</a></td></tr>
+            </TFOOT>
         </table>
     </script>
     <!-- /Alerts -->
