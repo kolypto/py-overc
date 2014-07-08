@@ -171,18 +171,30 @@
 
     /** Statusbar
      */
-    overcApplication.controller('statusbarCtrl', ['$scope', 'X', function($scope, X){
+    overcApplication.controller('statusbarCtrl', ['$scope', '$timeout', 'X', function($scope, $timeout, X){
         /** Application state
          * @type {Object}
          */
         $scope.state = {
             supervisor_lag: 0,
-            http_error: '', // TODO: display list of errors, and remove after a timeout
+            http_error: '',
             ajax_in_progress: false
         };
 
+        /** Event to update state fields
+         * X.emit('statusbar-state', { ajax_in_progress: true });
+         */
         $scope.$on('statusbar-state', function(event, state){
             _.extend($scope.state, state);
+        });
+
+        /** Unset HTTP error messages after a timeout
+         */
+        $scope.$watch('state.http_error', function(val, oldVal){
+            if (val)
+                $timeout(function(){
+                    $scope.state.http_error = '';
+                }, 3000);
         });
     }]);
 
