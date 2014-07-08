@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 
 class Service(object):
-    def __init__(self, period, name, cwd, command):
+    def __init__(self, period, name, cwd, command, max_lag=None):
         """ Define a service to be monitored
         :param period: Test period, seconds
         :type period: int
@@ -25,6 +25,7 @@ class Service(object):
 
         #: Plugin execution time
         self.lag = 0
+        self.max_lag = max_lag
 
         #: Timestamp when this service was tested last time
         self.last_tested = None
@@ -38,7 +39,10 @@ class Service(object):
     @property
     def real_period(self):
         """ Real update period, including lags and safety reserves """
-        return max(self.period * self.PERIOD_MARGIN_FACTOR - self.lag * self.LAG_MARGIN_FACTOR, 0.0)
+        return max(
+            self.period * self.PERIOD_MARGIN_FACTOR -
+            (self.max_lag if self.max_lag else self.lag * self.LAG_MARGIN_FACTOR),
+            0.0)
 
     def next_update_in(self, now):
         """ Get the relative time for the next update
@@ -150,6 +154,7 @@ class ServicesMonitor(object):
         threads = [threading.Thread(target=task, args=(service,)) for service in services]
         for t in threads: t.start()
         for t in threads: t.join()
+        # TODO: declare max waiting time. If any process doesnt manage to finish in time -- report it as a separate request
 
         return service_states
 

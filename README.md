@@ -234,6 +234,7 @@ command=./plugin.d/app.sh
 
 [service:que]
 period=10
+max-lag=3
 command=./plugin.d/que.sh
 
 [service:cpu]
@@ -253,6 +254,9 @@ command=echo 1
 * Section `[service:<name>]` defines a service to be monitored and reported
     
     * `period` is the time period in seconds defining how often the service status should be reported
+    * `max-lag` (optional) - specifies the maximum time in seconds the command is known to lag. 
+       Scheduler takes this value into consideration so each command manages to report in time.
+       If not specified -- command exec time is measured manually.
     * `command` -- an arbitrary command that tests your service: monitoring plugin.
         
         The command should be a script which prints out the service info, and its return code defines the status:

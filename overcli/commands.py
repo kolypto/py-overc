@@ -65,7 +65,8 @@ def cmd_monitor(args, overc):
                 ini.getint(section, 'period'),
                 name,
                 cwd,
-                ini.get(section, 'command')
+                ini.get(section, 'command'),
+                max_lag=ini.getfloat(section, 'max-lag') if ini.has_option(section, 'max-lag') else None
             ))
         else:
             raise ValueError('Unknown section type: "{}"'.format(type))
