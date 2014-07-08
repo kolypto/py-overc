@@ -44,3 +44,6 @@ table caption {
 
 /* States */
 #states .state-info .label { margin-left: 5px; }
+
+/* Overview */
+#overview .services { line-height: 28px; }

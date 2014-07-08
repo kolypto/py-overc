@@ -36,6 +36,10 @@
     <!-- Pages -->
 
     <script type="text/ng-template" id="page/overview.htm">
+        <div class="row"><div class="col-md-8" ui-view="overview"><i>Loading overview...</i></div></div>
+    </script>
+
+    <script type="text/ng-template" id="page/detailed.htm">
         <div class="row"><div class="col-md-8" ui-view="services"><i>Loading services...</i></div></div>
         <div class="row"><div class="col-md-8" ui-view="alerts"><i>Loading alerts...</i></div></div>
     </script>
@@ -52,6 +56,31 @@
 
     <!-- Controllers -->
 
+    <!-- Overview -->
+    <script type="text/ng-template" id="ctrl/overview.htm">
+        <table class="table table-bordered table-striped table-condensed" id="overview">
+            <THEAD>
+                <tr><th>Server</th><th>Services</th></tr>
+            </THEAD>
+            <TBODY>
+                <tr ng-repeat="server in servers track by server.id">
+                    <th class="col-md-2">
+                        <div class="label label-danger" ng-if="server.n_alerts" title="Alerts today">{{ server.n_alerts }}</div>
+                        <a href>{{ server.title }}</a>
+                    </th>
+                    <td class="services">
+                        <ul class="list-unstyled list-inline">
+                            <li ng-repeat="service in server.services track by service.id" class="service-state state-{{ service.state.state }}" title="{{ service.title }}">
+                                <div class="label label-danger" ng-if="service.n_alerts" title="Alerts today">{{ service.n_alerts }}</div>
+                            </li>
+                        </ul>
+                    </td>
+                </tr>
+            </TBODY>
+        </table>
+    </script>
+    <!-- /Overview -->
+
     <!-- Services -->
     <script type="text/ng-template" id="ctrl/services.htm">
         <div class="alert alert-danger" ng-if="stats.supervisor_lag > 60">
@@ -62,7 +91,7 @@
         <table class="table table-striped table-bordered table-condensed" id="services">
             <caption>
                 Services
-                <div class="label label-danger" ng-if="stats.n_alerts" title="Alerts today">{{ stats.n_alerts }}</div>
+                <div class="label label-danger" ng-if="stats.n_alerts" title="Total alerts today">{{ stats.n_alerts }}</div>
             </caption>
             <THEAD>
                 <tr><th>Server</th><th>Service</th><th>State</th><th>Info</th></tr>
@@ -70,13 +99,13 @@
             <TBODY ng-repeat="server in servers track by server.id">
                 <tr ng-repeat="service in server.services track by service.id">
                     <th class="col-md-2" rowspan="{{ server.services.length }}" ng-if="$first">
-                        <div class="label label-danger pull-right" ng-if="server.n_alerts" title="Alerts today">{{ server.n_alerts }}</div>
+                        <div class="label label-danger pull-right" ng-if="server.n_alerts" title="Server alerts today">{{ server.n_alerts }}</div>
                         <a href>{{ server.title }}</a>
                             <a class="btn-delete glyphicon glyphicon-remove" title="Delete server" ng-click="actions.delete_server(server.id)"></a>
                         <div class="hint">{{ server.name }}, IP: {{ server.ip }}</div>
                     </th>
                     <td class="col-md-2">
-                        <div class="label label-danger pull-right" ng-if="service.n_alerts" title="Alerts today">{{ service.n_alerts }}</div>
+                        <div class="label label-danger pull-right" ng-if="service.n_alerts" title="Service alerts today">{{ service.n_alerts }}</div>
                         <a href ui-sref="service.view({ service_id: service.id })">{{ service.title }}</a>
                             <a class="btn-delete glyphicon glyphicon-remove" title="Delete service" ng-click="actions.delete_service(service.id)"></a>
                         <div class="hint">{{ service.name }}, period: {{ service.period }}s</div>

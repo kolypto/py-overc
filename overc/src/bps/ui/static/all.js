@@ -14,6 +14,22 @@
         $stateProvider.state('overview.all', {
             url: '',
             views: {
+                overview: {
+                    templateUrl: 'ctrl/overview.htm',
+                    controller: 'servicesCtrl'
+                }
+            }
+        });
+
+        $stateProvider.state('detailed', {
+            url: '/detailed',
+            templateUrl: 'page/detailed.htm',
+            abstract: true
+        });
+
+        $stateProvider.state('detailed.all', {
+            url: '',
+            views: {
                 services: {
                     templateUrl: 'ctrl/services.htm',
                     controller: 'servicesCtrl'
