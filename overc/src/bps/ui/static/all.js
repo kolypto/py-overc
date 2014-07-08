@@ -73,22 +73,37 @@
 
         // Other global stuff
         $rootScope.state = {
-            supervisor_lag: 0
+            // FIXME: Notifications should be displayed by a controller which gets data through events
+            supervisor_lag: 0,
+            http_error: ''
         };
     }]);
-
-
-
-
-
-
-    //region Services
 
     overcApplication.config(['$resourceProvider', function ($resourceProvider) {
         // Don't strip trailing slashes from calculated URLs
         //$resourceProvider.defaults.stripTrailingSlashes = false; // FIXME: Enable with AngularJS 1.3.0
     }]);
 
+    overcApplication.config(['$httpProvider', function($httpProvider) {
+        var http_err = _.template('"<%- config.method %> <%- config.url %>": <%- status %> <%- statusText %>.');
+
+        $httpProvider.interceptors.push(['$rootScope', '$q', function($rootScope, $q){ return {
+            // request: function(req){ console.log('Request', req); return req; },
+            // response: function(res){ return res; },
+            // requestError: function(rej){ return $q.reject(rej); },
+            responseError: function(rej){
+                $rootScope.state.http_error = http_err(rej);
+                console.error(rej);
+                return $q.reject(rej);
+            }
+        } }]);
+    }]);
+
+
+
+
+
+    //region Services
 
     /** API service
      */

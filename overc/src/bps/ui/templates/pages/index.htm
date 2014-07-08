@@ -44,6 +44,10 @@
         Supervisor process is not running correctly: some service states are not checked for {{ state.supervisor_lag }} seconds.
         Review OverC server logs.
     </div>
+
+    <div class="alert alert-warning" ng-if="state.http_error">
+        Failed to load data: {{ state.http_error }}
+    </div>
     <!-- /Notifications -->
 
 
