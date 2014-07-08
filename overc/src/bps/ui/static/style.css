@@ -32,14 +32,16 @@ table caption {
 
 #services TBODY th { vertical-align: middle; }
 
-.service-state.state-UNK { background-image: url("img/icons/VistaBase/PNG/24x24/Circle_Grey.png"); }
 .service-state.state-OK { background-image: url("img/icons/VistaBase/PNG/24x24/Circle_Green.png"); }
 .service-state.state-WARN { background-image: url("img/icons/VistaBase/PNG/24x24/Circle_Orange.png"); }
 .service-state.state-FAIL { background-image: url("img/icons/VistaBase/PNG/24x24/Circle_Red.png"); }
+.service-state.state-UNK { background-image: url("img/icons/VistaBase/PNG/24x24/Circle_Grey.png"); }
 .service-state {
     background-repeat: no-repeat;
     background-position: 2px 2px;
     padding-left: 32px !important;
+    min-width: 36px;
+    min-height: 36px;
 }
 
 /* States */
@@ -48,3 +50,5 @@ table caption {
 
 /* Overview */
 #overview .services { line-height: 28px; }
+#overview .service-state { padding-left: 0 !important; }
+#overview .service-state .label { font-size: 7pt; padding: 1px 2px; margin-left: 20px; border-radius: 10px; }
