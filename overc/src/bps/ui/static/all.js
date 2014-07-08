@@ -66,6 +66,17 @@
         })
     }]);
 
+    overcApplication.run(['$rootScope', '$state', '$stateParams', function($rootScope, $state, $stateParams){
+        // Add these so they're accessible from any scope
+        $rootScope.$state = $state;
+        $rootScope.$stateParams = $stateParams;
+
+        // Other global stuff
+        $rootScope.state = {
+            supervisor_lag: 0
+        };
+    }]);
+
 
 
 
@@ -136,7 +147,7 @@
      *      - server_id
      *      - service_id
      */
-    overcApplication.controller('servicesCtrl', ['$scope', '$state', '$interval', 'api', 'X', function($scope, $state, $interval, api, X){
+    overcApplication.controller('servicesCtrl', ['$rootScope', '$scope', '$state', '$interval', 'api', 'X', function($rootScope, $scope, $state, $interval, api, X){
         /** Known servers, services and their states
          * @type {Array}
          */
@@ -151,10 +162,7 @@
             n_alerts: 0,
             /** Last known state
              */
-            last_state_id: null,
-            /** Time ago supervisor has checked something
-             */
-            supervisor_lag: null
+            last_state_id: null
         };
 
         /** Action handlers
@@ -177,6 +185,11 @@
             var callback = function(res){
                 $scope.servers = res.servers;
                 $scope.stats = res.stats;
+                $rootScope.state.supervisor_lag = res.stats.supervisor_lag;
+
+                // Set service state
+                if ($state.params.service_id)
+                    $state.title = $scope.servers[0].services[0].title; // FIXME: this way of exporting the title is SHIT, but currently I have no better idea
             };
 
             if ($state.params.server_id)

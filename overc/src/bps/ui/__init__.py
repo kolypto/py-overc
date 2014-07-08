@@ -8,6 +8,7 @@ from flask import Blueprint
 from flask.templating import render_template
 from flask.globals import g, request
 
+from overc import __version__
 from overc.lib.db import models
 from overc.lib.flask.json import jsonapi
 
@@ -22,7 +23,7 @@ logger = getLogger(__name__)
 @bp.route('/', methods=['GET'])
 def index():
     """ Index page """
-    return render_template('pages/index.htm')
+    return render_template('pages/index.htm', overc_version=__version__)
 
 #endregion
 

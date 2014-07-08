@@ -15,21 +15,43 @@
 <body>
 
 <div class="container-fluid" ng-app="overcApplication" ng-cloak>
+    {% raw %}
 
     <!-- Navbar -->
-    <!--nav class="navbar navbar-default" role="navigation">
+    <nav class="navbar navbar-default" role="navigation" ui-view="navbar">
         <div class="container-fluid">
             <div class="navbar-header">
-                <a class="navbar-brand">OverC</a>
+                <a class="navbar-brand" ui-sref="overview.all">OverC</a>
             </div>
+
+            <ul class="nav navbar-nav">
+                <li ui-sref-active="active"><a ui-sref="overview.all">Servers</a></li>
+                <li ui-sref-active="active"><a ui-sref="detailed.all">Services</a></li>
+                <li ng-if="$state.current.name == 'service.view'" ui-sref-active="active">
+                    <a ui-sref="service.view">
+                        <span class="glyphicon glyphicon-chevron-right"></span>
+                        <b>{{ $state.title }}</b>
+                    </a>
+                </li>
+            </ul>
         </div>
-    </nav-->
+    </nav>
     <!-- /Navbar -->
 
-    {% raw %}
+
+    <!-- Notifications -->
+    <div class="alert alert-danger" ng-if="state.supervisor_lag">
+        Supervisor process is not running correctly: some service states are not checked for {{ state.supervisor_lag }} seconds.
+        Review OverC server logs.
+    </div>
+    <!-- /Notifications -->
+
+
+    <!-- View -->
     <ui-view>
         <i>Loading content...</i>
     </ui-view>
+    <!-- /View -->
 
 
 
@@ -83,11 +105,6 @@
 
     <!-- Services -->
     <script type="text/ng-template" id="ctrl/services.htm">
-        <div class="alert alert-danger" ng-if="stats.supervisor_lag > 60">
-            Supervisor process is not running correctly: some service states are not checked for {{ stats.supervisor_lag }} seconds.
-            Review OverC server logs.
-        </div>
-
         <table class="table table-striped table-bordered table-condensed" id="services">
             <caption>
                 Services
@@ -174,6 +191,10 @@
 
     <!-- /Controllers -->
     {% endraw %}
+
+    <footer>
+        <p class="text-muted">OverC v{{ overc_version }}, <a href="mailto:kolypto@gmail.com" class="navbar-link">kolypto@gmail.com</a></p>
+    </footer>
 
 </div>
 
