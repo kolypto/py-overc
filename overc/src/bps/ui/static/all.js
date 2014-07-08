@@ -84,6 +84,12 @@
 
     //region Services
 
+    overcApplication.config(['$resourceProvider', function ($resourceProvider) {
+        // Don't strip trailing slashes from calculated URLs
+        //$resourceProvider.defaults.stripTrailingSlashes = false; // FIXME: Enable with AngularJS 1.3.0
+    }]);
+
+
     /** API service
      */
     overcApplication.service('api', ['$resource', function($resource){
