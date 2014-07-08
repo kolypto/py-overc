@@ -144,8 +144,8 @@ def api_status_service_states(service_id):
         # Go through states and detect sequences of states with no changes: these are replaced with Groups
         # A "change": state change or alerts
 
-        #: List of groups to expand
-        expand = set(request.args.getlist('expand') if request.args.has_key('expand') else ())
+        #: List of groups to expand: [ (id1, id2), ... ]
+        expand = request.args.getlist('expand', lambda v: map(int, v.split('-'))) if request.args.has_key('expand') else ()
 
         # Detect groups
         prev_state = None
@@ -184,9 +184,11 @@ def api_status_service_states(service_id):
         for grp in reversed(groups):
             ss = (states[grp[1]], states[grp[0]])
             ss_ids = (ss[0].id, ss[1].id)
+
             # Skip expanded groups
-            if '{}-{}'.format(*ss_ids) in expand:
+            if any(ss_ids[0] <= e[0] <= ss_ids[1] or ss_ids[0] <= e[1] <= ss_ids[1] for e in expand):
                 continue
+
             # Replace with group
             states[grp[0] : grp[1]+1] = [ {
                                               'id': ss[0].id,  # Just for Angular

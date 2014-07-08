@@ -189,7 +189,7 @@
 
                 // Set service state
                 if ($state.params.service_id)
-                    $state.title = $scope.servers[0].services[0].title; // FIXME: this way of exporting the title is SHIT, but currently I have no better idea
+                    try { $state.title = $scope.servers[0].services[0].title; } catch(e){} // FIXME: this way of exporting the title is SHIT, but currently I have no better idea
             };
 
             if ($state.params.server_id)

@@ -266,7 +266,7 @@ class UITest(ApplicationTest, unittest.TestCase):
 
 
         # Load: collapsed mode, with expanded ranges
-        res, rv = self.test_client.jsonapi('GET', '/ui/api/status/service/1/states?groups=yes&expand=27-29')
+        res, rv = self.test_client.jsonapi('GET', '/ui/api/status/service/1/states?groups=yes&expand=26-29')
         self.assertEqual(rv.status_code, 200)
         states = res.pop('states')
         # Start & end of each group + delimiters
