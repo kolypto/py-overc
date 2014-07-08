@@ -21,7 +21,9 @@
     <nav class="navbar navbar-default" role="navigation" ui-view="navbar">
         <div class="container-fluid">
             <div class="navbar-header">
-                <a class="navbar-brand" ui-sref="overview.all">OverC</a>
+                <a class="navbar-brand" ui-sref="overview.all">
+                    OverC
+                </a>
             </div>
 
             <ul class="nav navbar-nav">
@@ -41,6 +43,8 @@
 
     <!-- Notifications -->
     <div ng-controller="statusbarCtrl">
+        <div id="ajax-loader" ng-show="state.ajax_in_progress"></div>
+
         <div class="alert alert-danger" ng-if="state.supervisor_lag > 60">
             Supervisor process is not running correctly: some service states are not checked for {{ state.supervisor_lag }} seconds.
             Review OverC server logs.

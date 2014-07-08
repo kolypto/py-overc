@@ -15,6 +15,15 @@ table caption {
     border-radius: 10px 10px 0 0;
 }
 
+/* Statusbar */
+#ajax-loader {
+    display: block;
+    position: absolute;
+    width: 32px; height: 32px;
+    margin: -63px 0 0 7px;
+    background: url("img/icons/ajax-loader.gif");
+}
+
 /* Services */
 #services .btn-delete {
     display: inline-block;

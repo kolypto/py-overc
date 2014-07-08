@@ -89,8 +89,14 @@
         var http_err = _.template('"<%- config.method %> <%- config.url %>": <%- status %> <%- statusText %>.');
 
         $httpProvider.interceptors.push(['$rootScope', '$q', 'X', function($rootScope, $q, X){ return {
-            // request: function(req){ console.log('Request', req); return req; },
-            // response: function(res){ return res; },
+            request: function(req){
+                X.emit('statusbar-state', { ajax_in_progress: true });
+                return req;
+            },
+            response: function(res){
+                X.emit('statusbar-state', { ajax_in_progress: false });
+                return res;
+            },
             // requestError: function(rej){ return $q.reject(rej); },
             responseError: function(rej){
                 X.emit('statusbar-state', { http_error: http_err(rej) });
@@ -171,7 +177,8 @@
          */
         $scope.state = {
             supervisor_lag: 0,
-            http_error: '' // TODO: display list of errors, and remove after a timeout
+            http_error: '', // TODO: display list of errors, and remove after a timeout
+            ajax_in_progress: false
         };
 
         $scope.$on('statusbar-state', function(event, state){
