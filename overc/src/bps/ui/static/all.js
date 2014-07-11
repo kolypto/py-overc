@@ -108,6 +108,34 @@
 
 
 
+    //region Filters
+
+    /** Format UTC times into local date-times
+     */
+    overcApplication.filter('utc2datetime', function(){
+        // Current user's timezone as "+0200"
+        var local_tz = moment().format('ZZ');
+
+        return function(input){
+            return moment.utc(input).zone(local_tz).format('YYYY-MM-DD HH:mm:ss');
+        };
+    });
+
+    /** Format UTC times into timeago
+     */
+    overcApplication.filter('utc2timeago', function(){
+        // Current user's timezone as "+0200"
+        var local_tz = moment().format('ZZ');
+
+        return function(input){
+            return moment.utc(input).zone(local_tz).fromNow();
+        };
+    });
+
+    //endregion
+
+
+
 
 
     //region Services

@@ -165,7 +165,7 @@
                     </td>
 
                     <td class="col-md-2"  ng-if="!state.group">
-                        {{ state.rtime }}
+                        {{ state.rtime|utc2datetime }}
                     </td>
                     <th class="col-md-2"  ng-if="!state.group">{{ state.service }}</th>
                     <td class="col-md-2 service-state state-{{ state.state }}"  ng-if="!state.group">
@@ -194,7 +194,7 @@
             </THEAD>
             <TBODY>
                 <tr ng-repeat="alert in alerts track by alert.id">
-                    <td>{{ alert.ctime }}</td>
+                    <td>{{ alert.ctime|utc2datetime }}</td>
                     <td><a>{{ alert.server }}</a></td>
                     <td><a>{{ alert.service }}</a></td>
                     <td>{{ alert.channel }} / {{ alert.event }}</td>
@@ -227,5 +227,6 @@
     <script src="//cdnjs.cloudflare.com/ajax/libs/angular-ui-router/0.2.10/angular-ui-router.js"></script>
     <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/2.4.1/lodash.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.7.0/moment.min.js"></script>
     <script src="{{ url_for('ui.static', filename='all.js') }}"></script>
 </html>
