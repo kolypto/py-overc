@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css">
     <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css">
 
-    <link rel="stylesheet" type="text/css" media="screen" href="{{ url_for('ui.static', filename='style.css') }}" />
+    <link rel="stylesheet" type="text/css" media="screen" href="{{ url_for('ui.static', filename='main.css') }}" />
 </head>
 <body>
 
@@ -102,9 +102,8 @@
                     </th>
                     <td class="services">
                         <ul class="list-unstyled list-inline">
-                            <li ng-repeat="service in server.services track by service.id" class="service-state state-{{ service.state.state }}" title="{{ service.title }}">
+                            <li ng-repeat="service in server.services track by service.id" class="state-sprite state-{{ service.state.state }}" title="{{ service.title }}">
                                 <div class="label label-danger" ng-if="service.n_alerts" title="Alerts today">{{ service.n_alerts }}</div>
-                                &ZeroWidthSpace;
                             </li>
                         </ul>
                     </td>
@@ -138,7 +137,8 @@
                             <a class="btn-delete glyphicon glyphicon-remove" title="Delete service" ng-click="actions.delete_service(service.id)"></a>
                         <div class="hint">{{ service.name }}, period: {{ service.period }}s</div>
                     </td>
-                    <td class="col-md-2 service-state state-{{ service.state.state }}" ng-if="service.state" animate-change="service.state.rtime">
+                    <td class="col-md-2" ng-if="service.state" animate-change="service.state.rtime">
+                        <i class="state-sprite state-{{ service.state.state }}" />
                         {{ service.state.state }}
                         <div class="label label-danger pull-right" ng-if="service.state.timed_out" title="Monitoring plugin did not report in time">Timeout</div>
                         <div class="hint">Seen: {{ service.state.seen_ago }} ago</div>

@@ -1,0 +1,91 @@
+@import "./partials/base";
+@import "./partials/sprites";
+
+/* Angular */
+[ng\:cloak], [ng-cloak], [data-ng-cloak], [x-ng-cloak], .ng-cloak, .x-ng-cloak {
+    display: none !important;
+}
+[ng-click], [data-ng-click], [x-ng-click] {
+    cursor: pointer;
+}
+
+/* Generic */
+table caption {
+    line-height: 24px;
+    font-weight: bold;
+    border: 1px solid #EEE;
+    border-bottom: none;
+    border-radius: 10px 10px 0 0;
+}
+
+/* Statusbar */
+#ajax-loader {
+    display: block;
+    position: absolute;
+    width: 32px; height: 32px;
+    margin: -63px 0 0 7px;
+    background: url("img/icons/ajax-loader.gif");
+}
+
+/* Services */
+#services {
+    /* Delete button */
+    .btn-delete {
+        display: inline-block;
+        visibility: hidden;
+        color: #F00;
+        font-size: 10px;
+    }
+
+    tr :hover .btn-delete { visibility: visible; }
+
+    /* Server name */
+    TBODY th { vertical-align: middle; }
+
+    /* Hint texts */
+    .hint {
+        font-size: 0.8em;
+        font-weight: normal;
+        color: #777;
+    }
+
+    /* Service state */
+    .state-sprite {
+        display: block;
+        float: left;
+        margin-right: 6px;
+    }
+
+    /* Update animation */
+    .change-remove {
+        background-color: #FF9;
+        transition: all 3s ease-in;
+    }
+    .change-remove-active {
+        background-color: white;
+    }
+}
+
+/* States */
+#states {
+    .state-info .label { margin-left: 5px; }
+    td.grouped { font-size: 0.8em; padding: 0; }
+}
+
+/* Overview */
+#overview {
+    .services {
+        .state-sprite {
+            margin-right: 10px;
+
+            .label {
+                float: right;
+                margin-top: 7px;
+                margin-right: -7px;
+                font-size: 7pt;
+                padding: 1px 2px;
+                border-radius: 10px;
+            }
+        }
+    }
+}
