@@ -30,7 +30,6 @@ setup(
         'server': [
             'flask >= 0.10.1',
             'sqlalchemy >= 0.9.6',
-            'pytz >= 2014.4',
             'mysql-python >= 1.2.5'
         ],
         'tests': ['freezegun >= 0.1.18']
