@@ -53,6 +53,14 @@ table caption {
     min-height: 36px;
 }
 
+.change-remove {
+  background-color: #FF9;
+  transition: all 3s ease-in;
+}
+.change-remove-active {
+  background-color: white;
+}
+
 /* States */
 #states .state-info .label { margin-left: 5px; }
 #states td.grouped { font-size: 0.8em; padding: 0; }

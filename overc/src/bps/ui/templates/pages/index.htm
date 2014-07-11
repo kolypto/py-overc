@@ -138,7 +138,7 @@
                             <a class="btn-delete glyphicon glyphicon-remove" title="Delete service" ng-click="actions.delete_service(service.id)"></a>
                         <div class="hint">{{ service.name }}, period: {{ service.period }}s</div>
                     </td>
-                    <td class="col-md-2 service-state state-{{ service.state.state }}" ng-if="service.state">
+                    <td class="col-md-2 service-state state-{{ service.state.state }}" ng-if="service.state" animate-change="service.state.rtime">
                         {{ service.state.state }}
                         <div class="label label-danger pull-right" ng-if="service.state.timed_out" title="Monitoring plugin did not report in time">Timeout</div>
                         <div class="hint">Seen: {{ service.state.seen_ago }} ago</div>
@@ -222,11 +222,14 @@
 </body>
 
     <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
-    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.19/angular.js"></script>
-    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.19/angular-resource.js"></script>
-    <script src="//cdnjs.cloudflare.com/ajax/libs/angular-ui-router/0.2.10/angular-ui-router.js"></script>
     <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/lodash.js/2.4.1/lodash.min.js"></script>
     <script src="//cdnjs.cloudflare.com/ajax/libs/moment.js/2.7.0/moment.min.js"></script>
+
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.19/angular.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.19/angular-resource.min.js"></script>
+    <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.2.19/angular-animate.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/angular-ui-router/0.2.10/angular-ui-router.js"></script>
+
     <script src="{{ url_for('ui.static', filename='all.js') }}"></script>
 </html>

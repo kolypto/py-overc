@@ -1,5 +1,5 @@
 (function(){
-    var overcApplication = angular.module('overcApplication', ['ngResource', 'ui.router']);
+    var overcApplication = angular.module('overcApplication', ['ngResource', 'ngAnimate', 'ui.router']);
 
     /** Routing
      */
@@ -135,6 +135,24 @@
     //endregion
 
 
+
+    //region Directives
+
+    /** Animate an element when the model changes
+     * Requires: $animate ['ngAnimate']
+     */
+    overcApplication.directive('animateChange', ['$animate', function($animate) {
+        return function(scope, elem, attr) {
+            scope.$watch(attr.animateChange, function(nv, ov) {
+                var cls = 'change';
+                $animate.addClass(elem, cls, function() {
+                    $animate.removeClass(elem, cls);
+                });
+            })
+        }
+    }]);
+
+    //endregion
 
 
 
