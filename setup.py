@@ -6,7 +6,7 @@ from setuptools import setup, find_packages
 setup(
     # http://pythonhosted.org/setuptools/setuptools.html
     name='overc',
-    version='1.0.9-0',
+    version='1.0.9-1',
     author='Mark Vartanyan',
     author_email='kolypto@gmail.com',
 
@@ -32,7 +32,7 @@ setup(
             'sqlalchemy >= 0.9.6',
             'mysql-python >= 1.2.5'
         ],
-        'tests': ['freezegun >= 0.1.18']
+        '_dev': ['wheel', 'nose', 'freezegun']
     },
     include_package_data=True,
     zip_safe=False,  # so we can access resources

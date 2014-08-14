@@ -13,7 +13,7 @@ def init_db_session(engine):
     """ Init DB session
     :param engine: Engine
     :type engine: sqlalchemy.engine.Engine
-    :rtype: sqlalchemy.orm.session.scoped_session
+    :rtype: sqlalchemy.orm.scoped_session
     """
     Session = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=engine))
 

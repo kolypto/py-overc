@@ -12,6 +12,6 @@ check:
 clean:
 	@rm -rf build/ dist/ *.egg-info/
 build: README.rst
-	@./setup.py build sdist bdist
+	@./setup.py build sdist bdist_wheel
 publish: README.rst
-	@./setup.py build sdist bdist register upload -r pypi
+	@./setup.py build sdist bdist_wheel register upload -r pypi
